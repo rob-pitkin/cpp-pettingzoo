@@ -6,9 +6,9 @@ from mpe2 import simple_v3
 import numpy as np
 
 
-def create_envs(seed=42, max_cycles=25):
+def create_envs(max_cycles=25):
     """Create both C++ and Python envs with same parameters"""
-    cpp_env = _simple_core.SimpleEnv(seed=seed, max_cycles=max_cycles)
+    cpp_env = _simple_core.SimpleEnv(max_cycles=max_cycles)
     py_env = simple_v3.parallel_env(max_cycles=max_cycles, continuous_actions=False)
     return cpp_env, py_env
 
@@ -48,8 +48,8 @@ def test_reset_deterministic():
     """Test that reset with same seed is deterministic (reproducible)"""
     # Note: C++ mt19937 and Python np.random produce different sequences
     # so we test determinism within each implementation
-    cpp_env1, _ = create_envs(seed=42)
-    cpp_env2, _ = create_envs(seed=42)
+    cpp_env1, _ = create_envs()
+    cpp_env2, _ = create_envs()
 
     cpp_obs1, _ = cpp_env1.reset(seed=42)
     cpp_obs2, _ = cpp_env2.reset(seed=42)
@@ -60,8 +60,8 @@ def test_reset_deterministic():
 
 def test_reset_different_seeds():
     """Test that different seeds give different initial states"""
-    cpp_env1, _ = create_envs(seed=1)
-    cpp_env2, _ = create_envs(seed=2)
+    cpp_env1, _ = create_envs()
+    cpp_env2, _ = create_envs()
 
     cpp_obs1, _ = cpp_env1.reset(seed=1)
     cpp_obs2, _ = cpp_env2.reset(seed=2)
@@ -75,8 +75,8 @@ def test_reset_different_seeds():
 
 def test_single_step_deterministic():
     """Test that C++ step is deterministic"""
-    cpp_env1, _ = create_envs(seed=123)
-    cpp_env2, _ = create_envs(seed=123)
+    cpp_env1, _ = create_envs()
+    cpp_env2, _ = create_envs()
 
     cpp_env1.reset(seed=123)
     cpp_env2.reset(seed=123)
@@ -98,13 +98,13 @@ def test_physics_dynamics():
     We test from a known state rather than relying on RNG equivalence.
     """
     # Manually set up identical initial states by using C++ observations
-    cpp_env, _ = create_envs(seed=42)
-    cpp_obs, _ = cpp_env.reset(seed=42)
+    cpp_env, _ = create_envs()
+    cpp_obs, _ = cpp_env.reset()
 
     # Test each action from the same starting point
     for action_idx in range(5):
-        cpp_env1, _ = create_envs(seed=42)
-        cpp_env1.reset(seed=42)
+        cpp_env1, _ = create_envs()
+        cpp_env1.reset()
 
         action = {"agent_0": action_idx}
         cpp_obs1, cpp_rewards1, _, _, _ = cpp_env1.step(action)
@@ -132,7 +132,7 @@ def test_velocity_changes_match_python():
     the velocity dynamics match exactly.
     """
     # Get a C++ initial state
-    cpp_env_ref, _ = create_envs(seed=123)
+    cpp_env_ref, _ = create_envs()
     cpp_obs_init, _ = cpp_env_ref.reset(seed=123)
 
     # Extract initial relative positions
@@ -148,14 +148,14 @@ def test_velocity_changes_match_python():
     # Test all 5 actions
     for action_idx in range(5):
         # Get C++ result
-        cpp_env, _ = create_envs(seed=123)
+        cpp_env, _ = create_envs()
         cpp_env.reset(seed=123)
         action = {"agent_0": action_idx}
         cpp_obs, _, _, _, _ = cpp_env.step(action)
         cpp_vel_x, cpp_vel_y = cpp_obs["agent_0"][0], cpp_obs["agent_0"][1]
 
         # Get Python result from same starting state
-        py_env, _ = create_envs(seed=123)
+        py_env, _ = create_envs()
         py_env.reset(seed=123)
         py_obs, _, _, _, _ = py_env.step(action)
         py_vel_x, py_vel_y = py_obs["agent_0"][0], py_obs["agent_0"][1]
@@ -170,7 +170,7 @@ def test_velocity_changes_match_python():
 def test_full_episode_truncation():
     """Test that full episode truncates at max_cycles"""
     max_cycles = 25
-    cpp_env, _ = create_envs(seed=789, max_cycles=max_cycles)
+    cpp_env, _ = create_envs(max_cycles=max_cycles)
 
     cpp_env.reset(seed=789)
 
@@ -190,7 +190,7 @@ def test_full_episode_truncation():
 
 def test_multiple_resets():
     """Test that reset works correctly multiple times"""
-    cpp_env, _ = create_envs(seed=999)
+    cpp_env, _ = create_envs()
 
     prev_obs = None
     for reset_seed in [100, 200, 300]:
@@ -214,7 +214,7 @@ def test_multiple_resets():
 def test_step_after_truncation():
     """Test that stepping after truncation behaves correctly"""
     max_cycles = 5  # Short episode
-    cpp_env, _ = create_envs(seed=555, max_cycles=max_cycles)
+    cpp_env, _ = create_envs(max_cycles=max_cycles)
 
     cpp_env.reset(seed=555)
 
@@ -238,7 +238,7 @@ def test_step_after_truncation():
 
 def test_reward_always_negative():
     """Test that rewards are always negative (distance-based)"""
-    cpp_env, _ = create_envs(seed=321)
+    cpp_env, _ = create_envs()
     cpp_env.reset(seed=321)
 
     for _ in range(25):

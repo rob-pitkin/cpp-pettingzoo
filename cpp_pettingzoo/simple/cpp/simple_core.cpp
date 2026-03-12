@@ -5,16 +5,12 @@
 
 namespace cpp_pettingzoo {
 
-SimpleEnv::SimpleEnv(std::optional<int> seed, int max_cycles)
-    : dist_(std::uniform_real_distribution<float>(-1.0, 1.0)), has_reset_(false) {
-  if (seed.has_value()) {
-    gen_ = std::mt19937(seed.value());
-  } else {
-    std::random_device rd;
-    gen_ = std::mt19937(rd());
-  }
+SimpleEnv::SimpleEnv(int max_cycles)
+    : dist_(std::uniform_real_distribution<float>(-1.0, 1.0)),
+      has_reset_(false) {
   max_cycles_ = max_cycles;
   timesteps_ = 0;
+  agents_ = {"agent_0"}; // Initialize active agents
 }
 
 std::array<float, 2> SimpleEnv::action_to_force(int action) const {
@@ -63,6 +59,7 @@ ObservationMap SimpleEnv::reset(std::optional<int> seed) {
   landmark_pos_ = {dist_(gen_), dist_(gen_)};
   timesteps_ = 0;
   has_reset_ = true;
+  agents_ = {"agent_0"}; // Reset active agents
 
   return {{"agent_0", get_observation()}};
 }
@@ -70,8 +67,9 @@ ObservationMap SimpleEnv::reset(std::optional<int> seed) {
 State SimpleEnv::step(const ActionMap &actions) {
   assert(has_reset_ && "reset() must be called before step()");
 
-  // If episode is already done, return current state without computing physics
+  // If episode is already done, clear agents and return current state
   if (timesteps_ >= max_cycles_) {
+    agents_.clear();
     return {{{"agent_0", get_observation()}},
             {{"agent_0", calculate_reward()}},
             {{"agent_0", false}},
@@ -98,10 +96,17 @@ State SimpleEnv::step(const ActionMap &actions) {
 
   timesteps_++;
 
+  // Clear agents if episode ends
+  if (timesteps_ >= max_cycles_) {
+    agents_.clear();
+  }
+
   return {{{"agent_0", get_observation()}},
           {{"agent_0", calculate_reward()}},
           {{"agent_0", false}},
           {{"agent_0", timesteps_ >= max_cycles_}}};
 }
+
+std::vector<std::string> SimpleEnv::get_agents() const { return agents_; }
 
 } // namespace cpp_pettingzoo

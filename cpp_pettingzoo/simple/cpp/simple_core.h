@@ -30,9 +30,10 @@ struct State {
 
 class SimpleEnv {
 public:
-  SimpleEnv(std::optional<int> seed, int max_cycles = 25);
+  SimpleEnv(int max_cycles = 25);
   ObservationMap reset(std::optional<int> seed);
   State step(const ActionMap &actions);
+  std::vector<std::string> get_agents() const;
 
 private:
   std::array<float, 2> p_pos_;
@@ -41,6 +42,7 @@ private:
   int timesteps_;
   int max_cycles_;
   bool has_reset_;
+  std::vector<std::string> agents_;
   std::mt19937 gen_;
   std::uniform_real_distribution<float> dist_;
 

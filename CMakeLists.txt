@@ -31,7 +31,3 @@ pybind11_add_module(_simple_core
     cpp_pettingzoo/simple/cpp/bindings.cpp
     cpp_pettingzoo/simple/cpp/simple_core.cpp
 )
-
-# Test executable (optional, for testing compilation)
-add_executable(test_simple test_compile.cpp)
-target_link_libraries(test_simple simple_core)
