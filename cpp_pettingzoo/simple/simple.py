@@ -8,6 +8,7 @@ import functools
 import gymnasium
 from gymnasium.utils import EzPickle
 from pettingzoo import ParallelEnv
+import numpy as np
 
 # Add build directory to path
 build_dir = Path(__file__).parent.parent.parent / "build"
@@ -53,27 +54,30 @@ class raw_env(ParallelEnv, EzPickle):
             dynamic_rescaling=dynamic_rescaling,
         )
 
-        if continuous_actions:
-            raise NotImplementedError("Continuous actions not yet implemented in C++ version")
         if render_mode is not None:
             raise NotImplementedError("Rendering not yet implemented in C++ version")
-        if dynamic_rescaling:
-            raise NotImplementedError("Dynamic rescaling not yet implemented in C++ version")
 
         self.max_cycles = max_cycles
         self.render_mode = render_mode
+        self.dynamic_rescaling = dynamic_rescaling
+        self.continuous_actions = continuous_actions
 
         # C++ environment
-        self._cpp_env = _simple_core.SimpleEnv(max_cycles=self.max_cycles)
+        self._cpp_env = _simple_core.SimpleEnv(max_cycles=self.max_cycles, dynamic_rescaling=self.dynamic_rescaling, continuous_actions=self.continuous_actions)
 
         # Agent setup
         self.possible_agents = ["agent_0"]
         self.agents = self._cpp_env.get_agents()
 
         # Action and observation spaces
-        self._action_spaces = {
-            agent: gymnasium.spaces.Discrete(5) for agent in self.agents
-        }
+        if (self.continuous_actions):
+          self._action_spaces = {
+              agent: gymnasium.spaces.Box(low=0, high=1, shape=(5,), dtype="float32") for agent in self.agents
+          }
+        else:
+          self._action_spaces = {
+              agent: gymnasium.spaces.Discrete(5) for agent in self.agents
+          }
         self._observation_spaces = {
             agent: gymnasium.spaces.Box(
                 low=-float("inf"),
@@ -129,7 +133,15 @@ class raw_env(ParallelEnv, EzPickle):
             return {}, {}, {}, {}, {}
 
         # Forward to C++ (already returns correct format)
-        observations, rewards, terminations, truncations, infos = self._cpp_env.step(actions)
+        try:
+            # Convert actions to an array of floats if continuous actions is false
+            if not self.continuous_actions:
+                actions = {agent: [float(action)] for agent, action in actions.items()}
+            observations, rewards, terminations, truncations, infos = self._cpp_env.step(actions)
+        except RuntimeError as e:
+            if "reset() must be called before step()" in str(e):
+                raise AttributeError("agents cannot be accessed before reset")
+            raise
 
         # Get updated agents list from C++ (will be empty if episode done)
         self.agents = self._cpp_env.get_agents()
@@ -146,16 +158,17 @@ class raw_env(ParallelEnv, EzPickle):
         raise NotImplementedError("Rendering not yet implemented in C++ version")
 
     def close(self):
-        """Close the environment."""
-        self._cpp_env = None
+        """Close the environment. (we don't render in C++)"""
+        pass
 
     def state(self):
         """Return the global state (same as observation for single agent)."""
-        if self._cpp_env is None:
-            return None
-        # For single agent, state is just the observation
-        # This is a bit of a hack - we'd need to expose state from C++ properly
-        return None
+        if self._cpp_env:
+            try:
+                return np.array(self._cpp_env.get_state(), dtype=np.float32)
+            except RuntimeError as e:
+                raise AssertionError(str(e))
+
 
 
 # Expose as both raw_env and parallel_env (they're the same since C++ is already parallel)

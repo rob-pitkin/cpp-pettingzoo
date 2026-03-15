@@ -2,14 +2,18 @@
 #include <algorithm>
 #include <cassert>
 #include <random>
+#include <stdexcept>
 
 namespace cpp_pettingzoo {
 
-SimpleEnv::SimpleEnv(int max_cycles)
+SimpleEnv::SimpleEnv(int max_cycles, bool dynamic_rescaling,
+                     bool continuous_actions)
     : dist_(std::uniform_real_distribution<float>(-1.0, 1.0)),
       has_reset_(false) {
   max_cycles_ = max_cycles;
   timesteps_ = 0;
+  dynamic_rescaling_ = dynamic_rescaling;
+  continuous_actions_ = continuous_actions;
   agents_ = {"agent_0"}; // Initialize active agents
 }
 
@@ -46,6 +50,13 @@ std::vector<float> SimpleEnv::get_observation() const {
           landmark_pos_[1] - p_pos_[1]};
 }
 
+std::vector<float> SimpleEnv::get_state() const {
+  if (!has_reset_) {
+    throw std::runtime_error("reset() must be called before state()");
+  }
+  return get_observation();
+}
+
 ObservationMap SimpleEnv::reset(std::optional<int> seed) {
   if (seed.has_value()) {
     gen_ = std::mt19937(seed.value());
@@ -65,7 +76,9 @@ ObservationMap SimpleEnv::reset(std::optional<int> seed) {
 }
 
 State SimpleEnv::step(const ActionMap &actions) {
-  assert(has_reset_ && "reset() must be called before step()");
+  if (!has_reset_) {
+    throw std::runtime_error("reset() must be called before step()");
+  }
 
   // If episode is already done, clear agents and return current state
   if (timesteps_ >= max_cycles_) {
@@ -76,8 +89,14 @@ State SimpleEnv::step(const ActionMap &actions) {
             {{"agent_0", true}}};
   }
 
-  int selected_action = actions.at("agent_0");
-  std::array<float, 2> force = action_to_force(selected_action);
+  std::vector<float> selected_action = actions.at("agent_0");
+  std::array<float, 2> force;
+  if (continuous_actions_) {
+    force = action_to_force_continuous(selected_action);
+  } else {
+    int action_idx = static_cast<int>(selected_action[0]);
+    force = action_to_force(action_idx);
+  }
 
   // Update position
   p_pos_[0] += p_vel_[0] * DT;
@@ -108,5 +127,16 @@ State SimpleEnv::step(const ActionMap &actions) {
 }
 
 std::vector<std::string> SimpleEnv::get_agents() const { return agents_; }
+
+std::array<float, 2>
+SimpleEnv::action_to_force_continuous(const std::vector<float> &action) const {
+  // action is[no - op, left, right, down, up]
+  // force_x = (right - left) * sensitivity
+  // force_y = (up - down) * sensitivity
+  assert(action.size() == 5 && "Action must be of size 5");
+  float force_x = (action[2] - action[1]) * SENSITIVITY;
+  float force_y = (action[4] - action[3]) * SENSITIVITY;
+  return {force_x, force_y};
+}
 
 } // namespace cpp_pettingzoo

@@ -6,8 +6,11 @@ PYBIND11_MODULE(_simple_core, m) {
   m.doc() = "Simple Environment C++ Implementation";
 
   pybind11::class_<cpp_pettingzoo::SimpleEnv>(m, "SimpleEnv")
-      .def(pybind11::init<int>(), pybind11::arg("max_cycles") = 25)
+      .def(pybind11::init<int, bool, bool>(), pybind11::arg("max_cycles") = 25,
+           pybind11::arg("dynamic_rescaling") = false,
+           pybind11::arg("continuous_actions") = false)
       .def("get_agents", &cpp_pettingzoo::SimpleEnv::get_agents)
+      .def("get_state", &cpp_pettingzoo::SimpleEnv::get_state)
       .def(
           "reset",
           [](cpp_pettingzoo::SimpleEnv &self, std::optional<int> seed) {

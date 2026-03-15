@@ -46,8 +46,8 @@ def benchmark_episodes(env_factory, n_episodes, max_cycles):
 
 if __name__ == "__main__":
   n_resets = 1000000
-  n_steps = 10000000
-  n_episodes = 1000000
+  n_steps = 1000000
+  n_episodes = 100000
   max_cycles = 25
 
   print("=" * 60)
