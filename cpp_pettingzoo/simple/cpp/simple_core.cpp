@@ -139,4 +139,13 @@ SimpleEnv::action_to_force_continuous(const std::vector<float> &action) const {
   return {force_x, force_y};
 }
 
+RenderState SimpleEnv::get_render_state() const {
+  if (!has_reset_) {
+    throw std::runtime_error("reset() must be called before render_state()");
+  }
+  return {{"agent_pos", p_pos_},
+          {"agent_vel", p_vel_},
+          {"landmark_pos", landmark_pos_}};
+}
+
 } // namespace cpp_pettingzoo

@@ -9,6 +9,7 @@ import gymnasium
 from gymnasium.utils import EzPickle
 from pettingzoo import ParallelEnv
 import numpy as np
+import pygame
 
 # Add build directory to path
 build_dir = Path(__file__).parent.parent.parent / "build"
@@ -16,6 +17,38 @@ sys.path.insert(0, str(build_dir))
 
 import _simple_core
 
+
+class EntityState:
+    def __init__(self):
+        self.p_pos = None
+        self.p_vel = None
+
+
+class Entity:
+    def __init__(self, name=""):
+        self.name = name
+        self.size = 0.050
+        self.color = None
+        self.state = EntityState()
+
+
+class Agent(Entity):
+    def __init__(self):
+        super().__init__("agent_0")
+        self.silent = True # Simple env has no communication
+
+class Landmark(Entity):
+    def __init__(self):
+        super().__init__("landmark_0")
+
+class World:
+    def __init__(self):
+        self.agents = []
+        self.landmarks = []
+
+    @property
+    def entities(self):
+        return self.agents + self.landmarks
 
 class raw_env(ParallelEnv, EzPickle):
     """PettingZoo ParallelEnv wrapper for C++ Simple environment.
@@ -54,13 +87,13 @@ class raw_env(ParallelEnv, EzPickle):
             dynamic_rescaling=dynamic_rescaling,
         )
 
-        if render_mode is not None:
-            raise NotImplementedError("Rendering not yet implemented in C++ version")
-
         self.max_cycles = max_cycles
         self.render_mode = render_mode
         self.dynamic_rescaling = dynamic_rescaling
         self.continuous_actions = continuous_actions
+        if render_mode is not None and render_mode not in ["human", "rgb_array"]:
+            raise ValueError(f"Invalid render_mode: {render_mode}. Must be 'human' or 'rgb_array'")
+        self.render_mode = render_mode
 
         # C++ environment
         self._cpp_env = _simple_core.SimpleEnv(max_cycles=self.max_cycles, dynamic_rescaling=self.dynamic_rescaling, continuous_actions=self.continuous_actions)
@@ -88,6 +121,24 @@ class raw_env(ParallelEnv, EzPickle):
             for agent in self.agents
         }
 
+        if self.render_mode is not None:
+            pygame.init()
+            self.width = 700
+            self.height = 700
+            self.screen = pygame.Surface([self.width, self.height])
+            self.game_font = pygame.font.Font(None, 24)
+            self.viewer = None
+            self.renderOn = False
+
+            self.world = World()
+            self.world.agents = [Agent()]
+            self.world.landmarks = [Landmark()]
+
+            self.world.agents[0].color = np.array([0.25, 0.25, 0.25])
+            self.world.landmarks[0].color = np.array([0.75, 0.25, 0.25])
+
+            self.original_cam_range = 1.0
+
     @functools.lru_cache(maxsize=None)
     def observation_space(self, agent):
         """Return observation space for agent."""
@@ -112,6 +163,19 @@ class raw_env(ParallelEnv, EzPickle):
         result = self._cpp_env.reset(seed=seed)
 
         self.agents = self._cpp_env.get_agents()
+
+        if self.render_mode is not None:
+            render_state = self._cpp_env.get_render_state()
+            agent_pos = render_state["agent_pos"]
+            agent_vel = render_state["agent_vel"]
+            landmark_pos = render_state["landmark_pos"]
+
+            self.world.agents[0].state.p_pos = np.array(agent_pos)
+            self.world.agents[0].state.p_vel = np.array(agent_vel)
+            self.world.landmarks[0].state.p_pos = np.array(landmark_pos)
+            self.world.landmarks[0].state.p_vel = np.zeros(2)
+            all_poses = [entity.state.p_pos for entity in self.world.entities]
+            self.original_cam_range = np.max(np.abs(np.array(all_poses)))
 
         return result
 
@@ -146,20 +210,89 @@ class raw_env(ParallelEnv, EzPickle):
         # Get updated agents list from C++ (will be empty if episode done)
         self.agents = self._cpp_env.get_agents()
 
+        if self.render_mode is not None:
+            render_state = self._cpp_env.get_render_state()
+            agent_pos = render_state["agent_pos"]
+            agent_vel = render_state["agent_vel"]
+            landmark_pos = render_state["landmark_pos"]
+
+            self.world.agents[0].state.p_pos = np.array(agent_pos)
+            self.world.agents[0].state.p_vel = np.array(agent_vel)
+            self.world.landmarks[0].state.p_pos = np.array(landmark_pos)
+            self.world.landmarks[0].state.p_vel = np.zeros(2)
+
         return observations, rewards, terminations, truncations, infos
 
+    def enable_render(self, mode="human"):
+        """Enable rendering by creating the pygame display window."""
+        if not self.renderOn and mode == "human":
+            self.screen = pygame.display.set_mode(self.screen.get_size())
+            self.clock = pygame.time.Clock()
+            self.renderOn = True
+
     def render(self):
-        """Render the environment (not implemented)."""
+        """Render the environment."""
         if self.render_mode is None:
             gymnasium.logger.warn(
                 "You are calling render method without specifying any render mode."
             )
             return
-        raise NotImplementedError("Rendering not yet implemented in C++ version")
+
+        self.enable_render(self.render_mode)
+
+        self.draw()
+        if self.render_mode == "rgb_array":
+            observation = np.array(pygame.surfarray.pixels3d(self.screen))
+            return np.transpose(observation, axes=(1, 0, 2))
+        elif self.render_mode == "human":
+            pygame.display.flip()
+            self.clock.tick(self.metadata["render_fps"])
+            return
+
+    def draw(self):
+        """Draw the current state of the environment."""
+        # clear screen
+        self.screen.fill((255, 255, 255))
+
+        # update bounds to center around agent
+        all_poses = [entity.state.p_pos for entity in self.world.entities]
+        cam_range = np.max(np.abs(np.array(all_poses)))
+
+        # The scaling factor is used for dynamic rescaling of the rendering - a.k.a Zoom In/Zoom Out effect
+        # The 0.9 is a factor to keep the entities from appearing "too" out-of-bounds
+        scaling_factor = 0.9 * self.original_cam_range / cam_range
+
+        # update geometry and text positions
+        for e, entity in enumerate(self.world.entities):
+            # geometry
+            x, y = entity.state.p_pos
+            y *= (
+                -1
+            )  # this makes the display mimic the old pyglet setup (ie. flips image)
+            x = (
+                (x / cam_range) * self.width // 2 * 0.9
+            )  # the .9 is just to keep entities from appearing "too" out-of-bounds
+            y = (y / cam_range) * self.height // 2 * 0.9
+            x += self.width // 2
+            y += self.height // 2
+
+            # 350 is an arbitrary scale factor to get pygame to render similar sizes as pyglet
+            if self.dynamic_rescaling:
+                radius = entity.size * 350 * scaling_factor
+            else:
+                radius = entity.size * 350
+
+            pygame.draw.circle(self.screen, entity.color * 200, (x, y), radius)
+            pygame.draw.circle(self.screen, (0, 0, 0), (x, y), radius, 1)  # borders
+            assert (
+                0 < x < self.width and 0 < y < self.height
+            ), f"Coordinates {(x, y)} are out of bounds."
 
     def close(self):
-        """Close the environment. (we don't render in C++)"""
-        pass
+        """Close the environment and clean up pygame."""
+        if hasattr(self, 'screen') and self.screen is not None:
+            pygame.quit()
+            self.screen = None
 
     def state(self):
         """Return the global state (same as observation for single agent)."""

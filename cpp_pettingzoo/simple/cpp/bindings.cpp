@@ -11,6 +11,7 @@ PYBIND11_MODULE(_simple_core, m) {
            pybind11::arg("continuous_actions") = false)
       .def("get_agents", &cpp_pettingzoo::SimpleEnv::get_agents)
       .def("get_state", &cpp_pettingzoo::SimpleEnv::get_state)
+      .def("get_render_state", &cpp_pettingzoo::SimpleEnv::get_render_state)
       .def(
           "reset",
           [](cpp_pettingzoo::SimpleEnv &self, std::optional<int> seed) {

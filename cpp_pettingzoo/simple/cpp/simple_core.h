@@ -22,6 +22,7 @@ typedef std::unordered_map<std::string, bool> TruncationMap;
 // We use std::vector float for discrete and continuous. Former case is a one
 // element vector, latter is 5 float elements.
 typedef std::unordered_map<std::string, std::vector<float>> ActionMap;
+typedef std::unordered_map<std::string, std::array<float, 2>> RenderState;
 
 struct State {
   ObservationMap observations;
@@ -38,6 +39,7 @@ public:
   State step(const ActionMap &actions);
   std::vector<std::string> get_agents() const;
   std::vector<float> get_state() const;
+  RenderState get_render_state() const;
 
 private:
   std::array<float, 2> p_pos_;
