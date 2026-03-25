@@ -136,12 +136,10 @@ def test_constructor_parameters():
     env = parallel_env(max_cycles=50)
     assert env.max_cycles == 50
 
-    # Test unsupported parameters raise errors
-    with pytest.raises(NotImplementedError):
-        parallel_env(continuous_actions=True)
-
-    with pytest.raises(NotImplementedError):
-        parallel_env(render_mode="human")
+    # continuous_actions and render_mode are now implemented
+    # Test that they don't raise errors
+    env = parallel_env(continuous_actions=True)
+    env = parallel_env(render_mode="human")
 
 
 def test_action_space_values():

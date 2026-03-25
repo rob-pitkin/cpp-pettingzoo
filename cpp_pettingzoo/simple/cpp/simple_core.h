@@ -8,11 +8,11 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../../../core/world.h"
+#include "simple_scenario.h"
+
 namespace cpp_pettingzoo {
 
-static constexpr float DT = 0.1;
-static constexpr float DAMPING = 0.25;
-static constexpr float MASS = 1.0;
 static constexpr float SENSITIVITY = 5.0;
 
 typedef std::unordered_map<std::string, std::vector<float>> ObservationMap;
@@ -32,39 +32,30 @@ struct State {
 };
 
 class SimpleEnv {
-public:
+ public:
   SimpleEnv(int max_cycles = 25, bool dynamic_rescaling = false,
             bool continuous_actions_ = false);
   ObservationMap reset(std::optional<int> seed);
-  State step(const ActionMap &actions);
+  State step(const ActionMap& actions);
   std::vector<std::string> get_agents() const;
   std::vector<float> get_state() const;
   RenderState get_render_state() const;
 
-private:
-  std::array<float, 2> p_pos_;
-  std::array<float, 2> p_vel_;
-  std::array<float, 2> landmark_pos_;
+ private:
   int timesteps_;
   int max_cycles_;
   bool has_reset_;
   bool dynamic_rescaling_;
   bool continuous_actions_;
   std::vector<std::string> agents_;
-  std::mt19937 gen_;
-  std::uniform_real_distribution<float> dist_;
+  core::World world_;
+  simple::SimpleScenario scenario_;
 
   std::array<float, 2> action_to_force(int action) const;
 
-  std::array<float, 2>
-  action_to_force_continuous(const std::vector<float> &action) const;
-
-  void clamp_position();
-
-  float calculate_reward() const;
-
-  std::vector<float> get_observation() const;
+  std::array<float, 2> action_to_force_continuous(
+      const std::vector<float>& action) const;
 };
-} // namespace cpp_pettingzoo
+}  // namespace cpp_pettingzoo
 
 #endif

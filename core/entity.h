@@ -13,21 +13,15 @@ struct EntityState {
   std::array<float, 2> p_vel;
 };
 
-struct AgentState : public EntityState {
-  std::vector<float> c; // Communication, size = dim_c
-
-  explicit AgentState(size_t dim_c = 0) : c(dim_c, 0.0f) {}
-};
-
 struct Action {
-  std::array<float, 2> u; // physical force
-  std::vector<float> c;   // Communication
+  std::array<float, 2> u;  // physical force
+  std::vector<float> c;    // Communication
 
   explicit Action(size_t dim_c = 0) : c(dim_c, 0.0f) {}
 };
 
 class Entity {
-public:
+ public:
   std::string name;
   float size = 0.050f;
   bool movable = false;
@@ -46,28 +40,28 @@ public:
 };
 
 class Landmark : public Entity {
-public:
+ public:
   Landmark() = default;
   explicit Landmark(std::string n) : Entity(std::move(n)) {};
 };
 
 class Agent : public Entity {
-public:
+ public:
   bool silent = false;
   bool blind = false;
   std::optional<float> u_noise = std::nullopt;
   std::optional<float> c_noise = std::nullopt;
   float u_range = 1.0f;
-  AgentState agent_state;
+  std::vector<float> c;  // Communication, size = dim_c
   Action action;
 
   Agent() { movable = true; }
   explicit Agent(std::string n, size_t dim_c)
-      : Entity(std::move(n)), agent_state(dim_c), action(dim_c) {
+      : Entity(std::move(n)), c(dim_c, 0.0f), action(dim_c) {
     movable = true;
   };
 };
 
-} // namespace cpp_pettingzoo::core
+}  // namespace cpp_pettingzoo::core
 
-#endif // ENTITY_H_
+#endif  // ENTITY_H_

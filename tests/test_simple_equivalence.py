@@ -81,7 +81,7 @@ def test_single_step_deterministic():
     cpp_env1.reset(seed=123)
     cpp_env2.reset(seed=123)
 
-    action = {"agent_0": 2}  # Move right
+    action = {"agent_0": [2]}  # Move right
 
     cpp_obs1, cpp_rewards1, cpp_terms1, cpp_truncs1, _ = cpp_env1.step(action)
     cpp_obs2, cpp_rewards2, cpp_terms2, cpp_truncs2, _ = cpp_env2.step(action)
@@ -106,7 +106,7 @@ def test_physics_dynamics():
         cpp_env1, _ = create_envs()
         cpp_env1.reset()
 
-        action = {"agent_0": action_idx}
+        action = {"agent_0": [action_idx]}
         cpp_obs1, cpp_rewards1, _, _, _ = cpp_env1.step(action)
 
         # Check velocity changes are correct for each action
@@ -150,7 +150,7 @@ def test_velocity_changes_match_python():
         # Get C++ result
         cpp_env, _ = create_envs()
         cpp_env.reset(seed=123)
-        action = {"agent_0": action_idx}
+        action = {"agent_0": [action_idx]}
         cpp_obs, _, _, _, _ = cpp_env.step(action)
         cpp_vel_x, cpp_vel_y = cpp_obs["agent_0"][0], cpp_obs["agent_0"][1]
 
@@ -177,7 +177,7 @@ def test_full_episode_truncation():
     # Run full episode with random but deterministic actions
     np.random.seed(111)
     for t in range(max_cycles):
-        action = {"agent_0": np.random.randint(0, 5)}
+        action = {"agent_0": [np.random.randint(0, 5)]}
         cpp_obs, cpp_rewards, cpp_terms, cpp_truncs, _ = cpp_env.step(action)
 
         # Check truncation happens at the right time
@@ -206,7 +206,7 @@ def test_multiple_resets():
 
         # Take a few steps
         for _ in range(5):
-            action = {"agent_0": 2}
+            action = {"agent_0": [2]}
             cpp_obs, cpp_rewards, cpp_terms, cpp_truncs, _ = cpp_env.step(action)
             assert cpp_rewards["agent_0"] <= 0, "Rewards should be negative"
 
@@ -220,7 +220,7 @@ def test_step_after_truncation():
 
     # Step until truncation
     for t in range(max_cycles):
-        action = {"agent_0": 0}
+        action = {"agent_0": [0]}
         cpp_obs, cpp_rewards, cpp_terms, cpp_truncs, _ = cpp_env.step(action)
 
     # Should be truncated now
@@ -229,7 +229,7 @@ def test_step_after_truncation():
 
     # Step again after truncation - should return same state without computing physics
     cpp_obs_before = cpp_obs["agent_0"].copy()
-    cpp_obs2, cpp_rewards2, cpp_terms2, cpp_truncs2, _ = cpp_env.step({"agent_0": 0})
+    cpp_obs2, cpp_rewards2, cpp_terms2, cpp_truncs2, _ = cpp_env.step({"agent_0": [0]})
 
     # State should be the same (early exit optimization)
     assert_obs_close({"agent_0": cpp_obs_before}, cpp_obs2)
@@ -242,7 +242,7 @@ def test_reward_always_negative():
     cpp_env.reset(seed=321)
 
     for _ in range(25):
-        action = {"agent_0": np.random.randint(0, 5)}
+        action = {"agent_0": [np.random.randint(0, 5)]}
         _, rewards, _, _, _ = cpp_env.step(action)
 
         assert rewards["agent_0"] <= 0, f"Reward should be negative, got {rewards['agent_0']}"
