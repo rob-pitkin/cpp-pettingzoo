@@ -3,7 +3,7 @@
 #include <random>
 #include <stdexcept>
 
-#include "simple_core.h"
+#include "simple_env.h"
 
 namespace cpp_pettingzoo {
 
@@ -17,6 +17,8 @@ SimpleEnv::SimpleEnv(int max_cycles, bool dynamic_rescaling,
       agents_{"agent_0"} {
   // Create world structure once (agents and landmarks)
   scenario_.make_world(world_);
+  // Cache entity pointers for fast physics updates
+  world_.cache_entities();
 }
 
 std::array<float, 2> SimpleEnv::action_to_force(int action) const {

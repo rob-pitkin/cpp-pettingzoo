@@ -8,8 +8,10 @@ namespace cpp_pettingzoo::core {
 
 World::World(uint32_t seed) {
   rng_ = std::mt19937(seed);
+}
 
-  // Initialize entities
+void World::cache_entities() {
+  entities_.clear();
   entities_.reserve(agents.size() + landmarks.size());
   for (auto& agent : agents) {
     entities_.push_back(&agent);

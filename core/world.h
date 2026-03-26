@@ -25,6 +25,7 @@ class World {
   void step();
   std::mt19937& get_rng() { return rng_; }
   void reseed(uint32_t seed) { rng_ = std::mt19937(seed); }
+  void cache_entities();
 
  private:
   float dt_ = 0.1;

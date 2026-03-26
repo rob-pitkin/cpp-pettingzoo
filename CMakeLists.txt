@@ -21,17 +21,17 @@ execute_process(
 )
 find_package(pybind11 REQUIRED)
 
-# Build simple_core library
-add_library(simple_core
+# Build simple_env library
+add_library(simple_env
     core/world.cpp
-    cpp_pettingzoo/simple/cpp/simple_core.cpp
+    cpp_pettingzoo/simple/cpp/simple_env.cpp
     cpp_pettingzoo/simple/cpp/simple_scenario.cpp
 )
 
 # Build pybind11 module
 pybind11_add_module(_simple_core
     cpp_pettingzoo/simple/cpp/bindings.cpp
-    cpp_pettingzoo/simple/cpp/simple_core.cpp
+    cpp_pettingzoo/simple/cpp/simple_env.cpp
     cpp_pettingzoo/simple/cpp/simple_scenario.cpp
     core/world.cpp
 )
