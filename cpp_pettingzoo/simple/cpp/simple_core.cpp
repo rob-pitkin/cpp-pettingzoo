@@ -14,7 +14,10 @@ SimpleEnv::SimpleEnv(int max_cycles, bool dynamic_rescaling,
       has_reset_(false),
       dynamic_rescaling_(dynamic_rescaling),
       continuous_actions_(continuous_actions),
-      agents_{"agent_0"} {}
+      agents_{"agent_0"} {
+  // Create world structure once (agents and landmarks)
+  scenario_.make_world(world_);
+}
 
 std::array<float, 2> SimpleEnv::action_to_force(int action) const {
   switch (action) {
@@ -41,13 +44,12 @@ std::vector<float> SimpleEnv::get_state() const {
 }
 
 ObservationMap SimpleEnv::reset(std::optional<int> seed) {
+  // Reseed RNG if seed provided
   if (seed.has_value()) {
-    world_ = core::World(seed.value());
-  } else {
-    world_ = core::World();
+    world_.reseed(seed.value());
   }
 
-  scenario_.make_world(world_);
+  // Randomize positions (world structure already created in constructor)
   scenario_.reset_world(world_);
   timesteps_ = 0;
   has_reset_ = true;

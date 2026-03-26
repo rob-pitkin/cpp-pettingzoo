@@ -6,24 +6,24 @@
 
 namespace cpp_pettingzoo::core {
 
-World::World(uint32_t seed) { rng_ = std::mt19937(seed); }
+World::World(uint32_t seed) {
+  rng_ = std::mt19937(seed);
 
-std::vector<Entity*> World::entities() {
-  std::vector<Entity*> all_entities;
-  all_entities.reserve(agents.size() + landmarks.size());
+  // Initialize entities
+  entities_.reserve(agents.size() + landmarks.size());
   for (auto& agent : agents) {
-    all_entities.push_back(&agent);
+    entities_.push_back(&agent);
   }
   for (auto& landmark : landmarks) {
-    all_entities.push_back(&landmark);
+    entities_.push_back(&landmark);
   }
-  return all_entities;
 }
 
+std::vector<Entity*> World::entities() { return entities_; }
+
 void World::integrate_state(const ForceVector& p_force) {
-  std::vector<Entity*> all_entities = entities();
-  for (size_t i = 0; i < all_entities.size(); ++i) {
-    Entity* e = all_entities[i];
+  for (size_t i = 0; i < entities_.size(); ++i) {
+    Entity* e = entities_[i];
     if (!e->movable) {
       continue;
     }
@@ -94,13 +94,12 @@ ForceVector World::apply_action_force() {
 }
 
 void World::apply_environment_force(ForceVector& p_force) {
-  auto e_vec = entities();
-  for (size_t i = 0; i < e_vec.size(); ++i) {
-    for (size_t j = 0; j < e_vec.size(); ++j) {
+  for (size_t i = 0; i < entities_.size(); ++i) {
+    for (size_t j = 0; j < entities_.size(); ++j) {
       if (j <= i) {
         continue;
       }
-      auto collision_force = get_collision_force(*e_vec[i], *e_vec[j]);
+      auto collision_force = get_collision_force(*entities_[i], *entities_[j]);
       OptionalForce force_a = collision_force.first;
       OptionalForce force_b = collision_force.second;
       if (force_a.has_value()) {

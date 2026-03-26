@@ -43,8 +43,9 @@ void SimpleScenario::reset_world(core::World& w) {
 float SimpleScenario::reward(const core::Agent& agent,
                              const core::World& world) const {
   const core::Landmark& landmark = world.landmarks[0];
-  float dist = std::pow((agent.state.p_pos[0] - landmark.state.p_pos[0]), 2) +
-               std::pow((agent.state.p_pos[1] - landmark.state.p_pos[1]), 2);
+  float dx = agent.state.p_pos[0] - landmark.state.p_pos[0];
+  float dy = agent.state.p_pos[1] - landmark.state.p_pos[1];
+  float dist = dx * dx + dy * dy;
   return -dist;
 }
 

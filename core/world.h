@@ -24,6 +24,7 @@ class World {
 
   void step();
   std::mt19937& get_rng() { return rng_; }
+  void reseed(uint32_t seed) { rng_ = std::mt19937(seed); }
 
  private:
   float dt_ = 0.1;
@@ -32,6 +33,7 @@ class World {
   float contact_margin_ = 1e-3;
   int dim_p_ = 2;
   std::mt19937 rng_;
+  std::vector<Entity*> entities_;
 
   std::vector<Entity*> entities();
   ForceVector apply_action_force();
