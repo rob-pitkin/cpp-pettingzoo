@@ -1,14 +1,12 @@
-#include <cmath>
-#include <random>
-
-#include "core/entity.h"
 #include "simple_scenario.h"
+
+#include <random>
 
 namespace cpp_pettingzoo::simple {
 
 void SimpleScenario::make_world(core::World& w) {
   // Create an agent with size 0.15 and add it to the world
-  core::Agent a = core::Agent();
+  core::Agent a = core::Agent("agent_0", 0);  // dim_c=0 (no communication)
   a.size = 0.15f;
   a.color = {0.25f, 0.25f, 0.25f};
   a.collide = false;
@@ -16,7 +14,7 @@ void SimpleScenario::make_world(core::World& w) {
   w.agents.push_back(std::move(a));
 
   // Create a landmark with size 0.15 and add it to the world
-  core::Landmark l = core::Landmark();
+  core::Landmark l = core::Landmark("landmark_0");
   l.size = 0.15f;
   l.color = {0.75f, 0.25f, 0.25f};
   l.collide = false;

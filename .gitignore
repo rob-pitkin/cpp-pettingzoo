@@ -36,7 +36,3 @@ __pycache__/
 
 # Compile commands
 compile_commands.json
-
-# Test executables
-test_simple
-test_compile

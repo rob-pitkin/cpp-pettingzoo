@@ -1,4 +1,4 @@
-"""PettingZoo-compatible wrapper for C++ Simple environment."""
+"""PettingZoo-compatible wrapper for C++ Simple Spread environment."""
 
 import sys
 from pathlib import Path
@@ -15,7 +15,7 @@ import pygame
 build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
-import _simple_core
+import _simple_spread
 
 
 class EntityState:
@@ -33,13 +33,13 @@ class Entity:
 
 
 class Agent(Entity):
-    def __init__(self):
-        super().__init__("agent_0")
+    def __init__(self, name=""):
+        super().__init__(name)
         self.silent = True # Simple env has no communication
 
 class Landmark(Entity):
-    def __init__(self):
-        super().__init__("landmark_0")
+    def __init__(self, name=""):
+        super().__init__(name)
 
 class World:
     def __init__(self):
@@ -59,7 +59,7 @@ class raw_env(ParallelEnv, EzPickle):
 
     metadata = {
         "render_modes": ["human", "rgb_array"],
-        "name": "simple_v3",
+        "name": "simple_spread_v3",
         "is_parallelizable": True,
         "render_fps": 10,
     }
@@ -70,14 +70,20 @@ class raw_env(ParallelEnv, EzPickle):
         continuous_actions: bool = False,
         render_mode: Optional[str] = None,
         dynamic_rescaling: bool = False,
+        local_ratio: float = 0.5,
+        curriculum: bool = False,
+        curriculum_stage: int = 0
     ):
         """Initialize Simple environment.
 
         Args:
             max_cycles: Maximum number of timesteps per episode
-            continuous_actions: If True, use continuous action space (NOT IMPLEMENTED)
-            render_mode: Rendering mode (NOT IMPLEMENTED)
-            dynamic_rescaling: Dynamic rescaling (NOT IMPLEMENTED)
+            continuous_actions: If True, use continuous action space
+            render_mode: Rendering mode
+            dynamic_rescaling: Dynamic rescaling
+            local_ratio: Ratio of local rewards to global rewards
+            curriculum: If True, uses curriculum stages
+            curriculum_stage: Curriculum stage, either 0 or 1
         """
         EzPickle.__init__(
             self,
@@ -85,6 +91,9 @@ class raw_env(ParallelEnv, EzPickle):
             continuous_actions=continuous_actions,
             render_mode=render_mode,
             dynamic_rescaling=dynamic_rescaling,
+            local_ratio=local_ratio,
+            curriculum=curriculum,
+            curriculum_stage=curriculum_stage
         )
 
         self.max_cycles = max_cycles
@@ -94,12 +103,15 @@ class raw_env(ParallelEnv, EzPickle):
         if render_mode is not None and render_mode not in ["human", "rgb_array"]:
             raise ValueError(f"Invalid render_mode: {render_mode}. Must be 'human' or 'rgb_array'")
         self.render_mode = render_mode
+        self.local_ratio = local_ratio
+        self.curriculum = curriculum
+        self.curriculum_stage = curriculum_stage
 
         # C++ environment
-        self._cpp_env = _simple_core.SimpleEnv(max_cycles=self.max_cycles, dynamic_rescaling=self.dynamic_rescaling, continuous_actions=self.continuous_actions)
+        self._cpp_env = _simple_spread.SimpleSpreadEnv(max_cycles=self.max_cycles, dynamic_rescaling=self.dynamic_rescaling, continuous_actions=self.continuous_actions, local_ratio=self.local_ratio, curriculum=self.curriculum, curriculum_stage=self.curriculum_stage)
 
         # Agent setup
-        self.possible_agents = ["agent_0"]
+        self.possible_agents = self._cpp_env.get_agents()
         self.agents = self._cpp_env.get_agents()
 
         # Action and observation spaces
@@ -115,7 +127,7 @@ class raw_env(ParallelEnv, EzPickle):
             agent: gymnasium.spaces.Box(
                 low=-float("inf"),
                 high=float("inf"),
-                shape=(4,),
+                shape=(18,),
                 dtype="float32",
             )
             for agent in self.agents
@@ -131,11 +143,14 @@ class raw_env(ParallelEnv, EzPickle):
             self.renderOn = False
 
             self.world = World()
-            self.world.agents = [Agent()]
-            self.world.landmarks = [Landmark()]
+            self.world.agents = [Agent(agent) for agent in self.possible_agents]
+            self.world.landmarks = [Landmark(f"landmark {i}") for i in range(3)]
 
-            self.world.agents[0].color = np.array([0.25, 0.25, 0.25])
-            self.world.landmarks[0].color = np.array([0.75, 0.25, 0.25])
+            for agent in self.world.agents:
+                agent.color = np.array([0.35, 0.35, 0.85])
+
+            for landmark in self.world.landmarks:
+                landmark.color = np.array([0.25, 0.25, 0.25])
 
             self.original_cam_range = 1.0
 
@@ -167,11 +182,14 @@ class raw_env(ParallelEnv, EzPickle):
         if self.render_mode is not None:
             render_state = self._cpp_env.get_render_state()
 
-            self.world.agents[0].state.p_pos = np.array(render_state["agent_0_pos"])
-            self.world.agents[0].state.p_vel = np.array(render_state["agent_0_vel"])
-            self.world.landmarks[0].state.p_pos = np.array(render_state["landmark_0_pos"])
-            self.world.landmarks[0].state.p_vel = np.zeros(2)
+            for i, agent in enumerate(self.world.agents):
+                agent.state.p_pos = np.array(render_state[f"agent_{i}_pos"])
+                agent.state.p_vel = np.array(render_state[f"agent_{i}_vel"])
 
+            for i, landmark in enumerate(self.world.landmarks):
+                landmark.state.p_pos = np.array(render_state[f"landmark_{i}_pos"])
+                landmark.state.p_vel = np.zeros(2)
+            
             all_poses = [entity.state.p_pos for entity in self.world.entities]
             self.original_cam_range = np.max(np.abs(np.array(all_poses)))
 
@@ -210,11 +228,14 @@ class raw_env(ParallelEnv, EzPickle):
 
         if self.render_mode is not None:
             render_state = self._cpp_env.get_render_state()
+            
+            for i, agent in enumerate(self.world.agents):
+                agent.state.p_pos = np.array(render_state[f"agent_{i}_pos"])
+                agent.state.p_vel = np.array(render_state[f"agent_{i}_vel"])
 
-            self.world.agents[0].state.p_pos = np.array(render_state["agent_0_pos"])
-            self.world.agents[0].state.p_vel = np.array(render_state["agent_0_vel"])
-            self.world.landmarks[0].state.p_pos = np.array(render_state["landmark_0_pos"])
-            self.world.landmarks[0].state.p_vel = np.zeros(2)
+            for i, landmark in enumerate(self.world.landmarks):
+                landmark.state.p_pos = np.array(render_state[f"landmark_{i}_pos"])
+                landmark.state.p_vel = np.zeros(2)
 
         return observations, rewards, terminations, truncations, infos
 
