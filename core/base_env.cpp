@@ -1,13 +1,13 @@
-#include "base_env.h"
-
 #include <cassert>
 #include <stdexcept>
+
+#include "base_env.h"
 
 namespace cpp_pettingzoo::core {
 
 BaseEnv::BaseEnv(Scenario& scenario, World& world, int max_cycles,
-                     bool dynamic_rescaling, bool continuous_actions,
-                     std::optional<float> local_ratio)
+                 bool dynamic_rescaling, bool continuous_actions,
+                 std::optional<float> local_ratio)
     : max_cycles_(max_cycles),
       timesteps_(0),
       has_reset_(false),
@@ -103,11 +103,34 @@ State BaseEnv::step(const ActionMap& actions) {
     }
     std::vector<float> selected_action = actions.at(agent.name);
     std::array<float, 2> force;
+    int mdim = 5;  // movement dim, four directions and noop
     if (continuous_actions_) {
-      force = action_to_force_continuous(selected_action);
+      std::vector<float> move_action = std::vector<float>(
+          selected_action.begin(), selected_action.begin() + mdim);
+      force = action_to_force_continuous(move_action);
+      if (!agent.silent && world_.dim_c > 0) {
+        agent.action.c = std::vector<float>(selected_action.begin() + mdim,
+                                            selected_action.end());
+      } else if (world_.dim_c > 0) {
+        agent.action.c = std::vector<float>(world_.dim_c, 0.0f);
+      }
     } else {
       int action_idx = static_cast<int>(selected_action[0]);
-      force = action_to_force(action_idx);
+
+      // Decompose action if agent uses communication
+      int move_action = action_idx;
+      int comm_action = 0;
+
+      agent.action.c = std::vector<float>(world_.dim_c, 0.0f);
+      if (!agent.silent) {
+        move_action = action_idx % mdim;
+        comm_action = action_idx / mdim;
+
+        if (world_.dim_c > 0) {
+          agent.action.c[comm_action] = 1.0f;
+        }
+      }
+      force = action_to_force(move_action);
     }
     agent.action.u = force;
   }
@@ -165,15 +188,16 @@ RenderState BaseEnv::get_render_state() const {
     throw std::runtime_error("reset() must be called before render_state()");
   }
   RenderState state;
-  // Add all agent positions and velocities
+  // Add all agent positions, velocities, and colors
   for (const auto& agent : world_.agents) {
-    state[agent.name + "_pos"] = agent.state.p_pos;
-    state[agent.name + "_vel"] = agent.state.p_vel;
+    state[agent.name + "_pos"] = std::vector<float>(agent.state.p_pos.begin(), agent.state.p_pos.end());
+    state[agent.name + "_vel"] = std::vector<float>(agent.state.p_vel.begin(), agent.state.p_vel.end());
+    state[agent.name + "_color"] = std::vector<float>(agent.color.begin(), agent.color.end());
   }
   // Add all landmark positions
   for (size_t i = 0; i < world_.landmarks.size(); ++i) {
     state["landmark_" + std::to_string(i) + "_pos"] =
-        world_.landmarks[i].state.p_pos;
+        std::vector<float>(world_.landmarks[i].state.p_pos.begin(), world_.landmarks[i].state.p_pos.end());
   }
   return state;
 }

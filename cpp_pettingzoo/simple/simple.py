@@ -16,39 +16,7 @@ build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
 import _simple_core
-
-
-class EntityState:
-    def __init__(self):
-        self.p_pos = None
-        self.p_vel = None
-
-
-class Entity:
-    def __init__(self, name=""):
-        self.name = name
-        self.size = 0.050
-        self.color = None
-        self.state = EntityState()
-
-
-class Agent(Entity):
-    def __init__(self):
-        super().__init__("agent_0")
-        self.silent = True # Simple env has no communication
-
-class Landmark(Entity):
-    def __init__(self):
-        super().__init__("landmark_0")
-
-class World:
-    def __init__(self):
-        self.agents = []
-        self.landmarks = []
-
-    @property
-    def entities(self):
-        return self.agents + self.landmarks
+from cpp_pettingzoo.core import Agent, Landmark, World
 
 class raw_env(ParallelEnv, EzPickle):
     """PettingZoo ParallelEnv wrapper for C++ Simple environment.
@@ -131,8 +99,8 @@ class raw_env(ParallelEnv, EzPickle):
             self.renderOn = False
 
             self.world = World()
-            self.world.agents = [Agent()]
-            self.world.landmarks = [Landmark()]
+            self.world.agents = [Agent("agent_0", silent=True)]
+            self.world.landmarks = [Landmark("landmark_0")]
 
             self.world.agents[0].color = np.array([0.25, 0.25, 0.25])
             self.world.landmarks[0].color = np.array([0.75, 0.25, 0.25])
@@ -160,7 +128,10 @@ class raw_env(ParallelEnv, EzPickle):
             observations: Dict of observations for each agent
             infos: Dict of info dicts for each agent
         """
-        result = self._cpp_env.reset(seed=seed)
+        observations, infos = self._cpp_env.reset(seed=seed)
+
+        # Convert observations to numpy arrays for MPE2 API compatibility
+        observations = {agent: np.array(obs, dtype=np.float32) for agent, obs in observations.items()}
 
         self.agents = self._cpp_env.get_agents()
 
@@ -169,13 +140,14 @@ class raw_env(ParallelEnv, EzPickle):
 
             self.world.agents[0].state.p_pos = np.array(render_state["agent_0_pos"])
             self.world.agents[0].state.p_vel = np.array(render_state["agent_0_vel"])
+            self.world.agents[0].color = np.array(render_state["agent_0_color"])
             self.world.landmarks[0].state.p_pos = np.array(render_state["landmark_0_pos"])
             self.world.landmarks[0].state.p_vel = np.zeros(2)
 
             all_poses = [entity.state.p_pos for entity in self.world.entities]
             self.original_cam_range = np.max(np.abs(np.array(all_poses)))
 
-        return result
+        return observations, infos
 
     def step(self, actions):
         """Step the environment.
@@ -205,6 +177,9 @@ class raw_env(ParallelEnv, EzPickle):
                 raise AttributeError("agents cannot be accessed before reset")
             raise
 
+        # Convert observations to numpy arrays for MPE2 API compatibility
+        observations = {agent: np.array(obs, dtype=np.float32) for agent, obs in observations.items()}
+
         # Get updated agents list from C++ (will be empty if episode done)
         self.agents = self._cpp_env.get_agents()
 
@@ -213,6 +188,7 @@ class raw_env(ParallelEnv, EzPickle):
 
             self.world.agents[0].state.p_pos = np.array(render_state["agent_0_pos"])
             self.world.agents[0].state.p_vel = np.array(render_state["agent_0_vel"])
+            self.world.agents[0].color = np.array(render_state["agent_0_color"])
             self.world.landmarks[0].state.p_pos = np.array(render_state["landmark_0_pos"])
             self.world.landmarks[0].state.p_vel = np.zeros(2)
 

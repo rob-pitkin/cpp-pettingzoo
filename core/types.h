@@ -19,7 +19,7 @@ typedef std::unordered_map<std::string, bool> TruncationMap;
 // We use std::vector<float> for both discrete and continuous actions.
 // Discrete: one-element vector, Continuous: 5-element vector.
 typedef std::unordered_map<std::string, std::vector<float>> ActionMap;
-typedef std::unordered_map<std::string, std::array<float, 2>> RenderState;
+typedef std::unordered_map<std::string, std::vector<float>> RenderState;
 
 struct State {
   ObservationMap observations;

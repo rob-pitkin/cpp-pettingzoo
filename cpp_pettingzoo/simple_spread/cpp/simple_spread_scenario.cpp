@@ -27,10 +27,9 @@ void SimpleSpreadScenario::make_world(core::World& w) {
     w.agents.push_back(std::move(a));
   }
 
-  // Create three landmarks
+  // Create three landmarks with default size 0.050
   for (int i = 0; i < 3; ++i) {
     core::Landmark l = core::Landmark("landmark " + std::to_string(i));
-    l.size = 0.15f;
     l.color = {0.25f, 0.25f, 0.25f};
     l.collide = false;
     l.movable = false;

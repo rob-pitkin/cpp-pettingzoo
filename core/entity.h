@@ -54,6 +54,8 @@ class Agent : public Entity {
   float u_range = 1.0f;
   std::vector<float> c;  // Communication, size = dim_c
   Action action;
+  Entity* goal_a = nullptr;
+  Entity* goal_b = nullptr;
 
   Agent() { movable = true; }
   explicit Agent(std::string n, size_t dim_c)

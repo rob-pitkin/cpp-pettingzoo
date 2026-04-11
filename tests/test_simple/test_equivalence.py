@@ -263,5 +263,23 @@ def test_observation_shape():
     assert py_array.shape == (4,), f"Python obs shape should be (4,), got {py_array.shape}"
 
 
+def test_entity_sizes_match_mpe2():
+    """Test that entity sizes match MPE2 defaults."""
+    from cpp_pettingzoo.simple import parallel_env
+
+    # Create environment with render_mode to access world
+    env = parallel_env(render_mode="rgb_array")
+    env.reset(seed=42)
+
+    # Simple uses default size 0.050 for both agents and landmarks
+    for agent in env.world.agents:
+        assert agent.size == 0.050, f"Agent size should be 0.050, got {agent.size}"
+
+    for landmark in env.world.landmarks:
+        assert landmark.size == 0.050, f"Landmark size should be 0.050, got {landmark.size}"
+
+    env.close()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

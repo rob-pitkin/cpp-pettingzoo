@@ -49,3 +49,12 @@ pybind11_add_module(_simple_spread
     core/world.cpp
     core/base_env.cpp
 )
+
+# Build pybind11 module for SimpleReference
+pybind11_add_module(_simple_reference
+    cpp_pettingzoo/simple_reference/cpp/bindings.cpp
+    cpp_pettingzoo/simple_reference/cpp/simple_reference_env.cpp
+    cpp_pettingzoo/simple_reference/cpp/simple_reference_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)
