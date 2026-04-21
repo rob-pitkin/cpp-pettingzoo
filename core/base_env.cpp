@@ -102,36 +102,45 @@ State BaseEnv::step(const ActionMap& actions) {
       continue;  // Agent didn't provide action
     }
     std::vector<float> selected_action = actions.at(agent.name);
-    std::array<float, 2> force;
-    int mdim = 5;  // movement dim, four directions and noop
+    std::array<float, 2> force = {0.0f, 0.0f};
+    agent.action.c = std::vector<float>(world_.dim_c, 0.0f);
+
+    int mdim = 5;  // movement dim: four directions and noop
+
     if (continuous_actions_) {
-      std::vector<float> move_action = std::vector<float>(
-          selected_action.begin(), selected_action.begin() + mdim);
-      force = action_to_force_continuous(move_action);
+      // Sequential processing: extract movement first, then communication
+      size_t action_idx = 0;
+
+      if (agent.movable) {
+        // Extract movement action (first mdim elements)
+        std::vector<float> move_action(selected_action.begin(),
+                                       selected_action.begin() + mdim);
+        force = action_to_force_continuous(move_action);
+        action_idx = mdim;
+      }
+
       if (!agent.silent && world_.dim_c > 0) {
-        agent.action.c = std::vector<float>(selected_action.begin() + mdim,
-                                            selected_action.end());
-      } else if (world_.dim_c > 0) {
-        agent.action.c = std::vector<float>(world_.dim_c, 0.0f);
+        // Remaining elements are communication
+        agent.action.c = std::vector<float>(selected_action.begin() + action_idx,
+                                           selected_action.end());
       }
     } else {
-      int action_idx = static_cast<int>(selected_action[0]);
+      // Discrete actions: decompose single integer
+      int action_value = static_cast<int>(selected_action[0]);
 
-      // Decompose action if agent uses communication
-      int move_action = action_idx;
-      int comm_action = 0;
-
-      agent.action.c = std::vector<float>(world_.dim_c, 0.0f);
-      if (!agent.silent) {
-        move_action = action_idx % mdim;
-        comm_action = action_idx / mdim;
-
-        if (world_.dim_c > 0) {
-          agent.action.c[comm_action] = 1.0f;
-        }
+      if (agent.movable) {
+        // Extract movement from composite action
+        int move_action = action_value % mdim;
+        force = action_to_force(move_action);
+        action_value = action_value / mdim;  // Remove movement, keep communication
       }
-      force = action_to_force(move_action);
+
+      if (!agent.silent && world_.dim_c > 0 && action_value < world_.dim_c) {
+        // Remaining value is communication index
+        agent.action.c[action_value] = 1.0f;
+      }
     }
+
     agent.action.u = force;
   }
 

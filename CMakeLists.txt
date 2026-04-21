@@ -58,3 +58,12 @@ pybind11_add_module(_simple_reference
     core/world.cpp
     core/base_env.cpp
 )
+
+# Build pybind11 module for SimpleSpeakerListener
+pybind11_add_module(_simple_speaker_listener
+    cpp_pettingzoo/simple_speaker_listener/cpp/bindings.cpp
+    cpp_pettingzoo/simple_speaker_listener/cpp/simple_speaker_listener_env.cpp
+    cpp_pettingzoo/simple_speaker_listener/cpp/simple_speaker_listener_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)

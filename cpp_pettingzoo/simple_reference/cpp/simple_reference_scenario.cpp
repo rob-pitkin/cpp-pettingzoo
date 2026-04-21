@@ -85,13 +85,6 @@ float SimpleReferenceScenario::global_reward(const core::World& w) const {
 
 std::vector<float> SimpleReferenceScenario::observation(
     const core::Agent& agent, const core::World& world) const {
-  // TODO(human): Implement observation
-  // Concatenate:
-  // - agent velocity (2 elements)
-  // - relative positions of all 3 landmarks (6 elements)
-  // - goal color (3 elements) - agent.goal_b->color if not null, else zeros
-  // - communication from other agent (10 elements)
-  // Total: 21 elements
   std::vector<float> obs;
   obs.reserve(21);
   obs.push_back(agent.state.p_vel[0]);
