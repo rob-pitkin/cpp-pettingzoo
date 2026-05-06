@@ -82,6 +82,15 @@ pybind11_add_module(_simple_adversary
     core/base_env.cpp
 )
 
+# Build pybind11 module for SimpleFormation
+pybind11_add_module(_simple_formation
+    cpp_pettingzoo/simple_formation/cpp/bindings.cpp
+    cpp_pettingzoo/simple_formation/cpp/simple_formation_env.cpp
+    cpp_pettingzoo/simple_formation/cpp/simple_formation_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)
+
 # Build pybind11 module for SimplePush
 pybind11_add_module(_simple_push
     cpp_pettingzoo/simple_push/cpp/bindings.cpp

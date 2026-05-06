@@ -100,8 +100,10 @@ class parallel_env(ParallelEnv, EzPickle):
 
             for agent in self.world.agents:
                 agent.size = 0.05
-            for lm in self.world.landmarks:
+            _lm_colors = [np.array([0.1, 0.9, 0.1]), np.array([0.1, 0.1, 0.9])]
+            for lm, col in zip(self.world.landmarks, _lm_colors):
                 lm.size = 0.05
+                lm.color = col
 
     def reset(self, seed=None, options=None):
         observations, infos = self._cpp_env.reset(seed)

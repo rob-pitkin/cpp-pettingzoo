@@ -31,12 +31,15 @@ Benchmarks comparing C++ implementation (cpp-pettingzoo) vs pure Python implemen
 | **SimplePush** | Resets | 537,179 | 43,469 | **12.36x** |
 | | Steps | 220,386 | 15,960 | **13.81x** |
 | | Episodes | 9,127 | 645 | **14.14x** |
+| **SimpleFormation** | Resets | 399,064 | 39,599 | **10.08x** |
+| | Steps | 136,006 | 6,297 | **21.60x** |
+| | Episodes | 5,515 | 253 | **21.83x** |
 
 ## Key Findings
 
 ### Overall Performance
-- **Average speedup: 14.67x faster** than pure Python MPE2
-- **Range: 6.23x - 20.89x** depending on environment and operation
+- **Average speedup: 15.07x faster** than pure Python MPE2
+- **Range: 6.23x - 21.83x** depending on environment and operation
 
 ### Environment-Specific Analysis
 
@@ -74,6 +77,11 @@ Benchmarks comparing C++ implementation (cpp-pettingzoo) vs pure Python implemen
 - Smallest world (2 agents, 2 landmarks, no collision detection on landmarks) keeps per-step C++ work low, so Python wrapper overhead stays proportionally significant
 - The asymmetric observation (good agent encodes goal color; adversary does not) adds negligible C++ cost vs the Python equivalent
 
+**SimpleFormation (4 cooperative agents, 1 central landmark):**
+- **Best step/episode speedup in the suite: 21.60x / 21.83x** — Hungarian matching via munkres-cpp runs in microseconds; Python equivalent calls scipy's linear_sum_assignment each step
+- Reset speedup (10.08x) is moderate: the C++ reset is lightweight (random positions only) so Python wrapper overhead is proportionally larger
+- Pure global reward (local_ratio=0.0) means all 4 agents share the same scalar per step; the mutable cache (`cache_valid_` flag) ensures the Munkres solve runs exactly once per step even though global_reward() is called N times
+
 ### Performance Insights
 
 1. **Release build matters significantly**: Prior Debug-mode numbers showed 2-4x; Release shows 9-21x
@@ -104,6 +112,9 @@ uv run python cpp_pettingzoo/benchmark_simple_tag.py
 
 # SimplePush environment
 uv run python cpp_pettingzoo/benchmark_simple_push.py
+
+# SimpleFormation environment
+uv run python cpp_pettingzoo/benchmark_simple_formation.py
 ```
 
 ## Benchmark Details
@@ -114,4 +125,4 @@ Each benchmark measures three operations:
 2. **Steps**: Environment dynamics with random actions (1M steps, auto-reset on done)
 3. **Episodes**: Complete episodes with 25 steps each (100K episodes)
 
-All benchmarks use discrete action spaces. Communication in SimpleReference uses Discrete(50) (10 communication words × 5 movement actions). SimpleSpeakerListener uses asymmetric discrete action spaces: speaker Discrete(3), listener Discrete(5). SimpleAdversary uses Discrete(5) for all agents (movement only, no communication despite dim_c=2). SimpleTag uses Discrete(5) for all agents (3 adversaries + 1 good agent) with default full observability (no partial observability neighbors set). SimplePush uses Discrete(5) for both agents; the good agent's observation encodes goal identity via landmark colors.
+All benchmarks use discrete action spaces. Communication in SimpleReference uses Discrete(50) (10 communication words × 5 movement actions). SimpleSpeakerListener uses asymmetric discrete action spaces: speaker Discrete(3), listener Discrete(5). SimpleAdversary uses Discrete(5) for all agents (movement only, no communication despite dim_c=2). SimpleTag uses Discrete(5) for all agents (3 adversaries + 1 good agent) with default full observability (no partial observability neighbors set). SimplePush uses Discrete(5) for both agents; the good agent's observation encodes goal identity via landmark colors. SimpleFormation uses Discrete(5) for all 4 agents with a single central landmark; optimal agent-to-slot matching uses the Munkres algorithm (munkres-cpp) with results cached per step.
