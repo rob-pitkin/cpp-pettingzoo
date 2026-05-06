@@ -81,3 +81,21 @@ pybind11_add_module(_simple_adversary
     core/world.cpp
     core/base_env.cpp
 )
+
+# Build pybind11 module for SimplePush
+pybind11_add_module(_simple_push
+    cpp_pettingzoo/simple_push/cpp/bindings.cpp
+    cpp_pettingzoo/simple_push/cpp/simple_push_env.cpp
+    cpp_pettingzoo/simple_push/cpp/simple_push_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)
+
+# Build pybind11 module for SimpleTag
+pybind11_add_module(_simple_tag
+    cpp_pettingzoo/simple_tag/cpp/bindings.cpp
+    cpp_pettingzoo/simple_tag/cpp/simple_tag_env.cpp
+    cpp_pettingzoo/simple_tag/cpp/simple_tag_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)

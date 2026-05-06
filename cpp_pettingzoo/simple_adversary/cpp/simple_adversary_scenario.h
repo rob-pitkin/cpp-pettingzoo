@@ -32,4 +32,4 @@ class SimpleAdversaryScenario : public core::Scenario {
 
 }  // namespace cpp_pettingzoo::simple_adversary
 
-#endif  // SIMPLE_REFERENCE_SCENARIO_H_
+#endif  // SIMPLE_ADVERSARY_SCENARIO_H_

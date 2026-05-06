@@ -41,6 +41,9 @@ class Entity {
 
 class Landmark : public Entity {
  public:
+  bool boundary = false;
+  int index = 0;
+
   Landmark() = default;
   explicit Landmark(std::string n) : Entity(std::move(n)) {};
 };

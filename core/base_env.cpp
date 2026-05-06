@@ -2,6 +2,7 @@
 #include <stdexcept>
 
 #include "base_env.h"
+#include "core/types.h"
 
 namespace cpp_pettingzoo::core {
 
@@ -19,18 +20,20 @@ BaseEnv::BaseEnv(Scenario& scenario, World& world, int max_cycles,
   // Agent list will be built after make_world() is called by derived class
 }
 
-std::array<float, 2> BaseEnv::action_to_force(int action) const {
+std::array<float, 2> BaseEnv::action_to_force(int action,
+                                              const Agent& a) const {
+  float sensitivity = a.accel.value_or(SENSITIVITY);
   switch (action) {
     case 0:
       return {0.0, 0.0};
     case 1:
-      return {-SENSITIVITY, 0.0};
+      return {-sensitivity, 0.0};
     case 2:
-      return {SENSITIVITY, 0.0};
+      return {sensitivity, 0.0};
     case 3:
-      return {0.0, -SENSITIVITY};
+      return {0.0, -sensitivity};
     case 4:
-      return {0.0, SENSITIVITY};
+      return {0.0, sensitivity};
     default:
       return {0.0, 0.0};
   }
@@ -115,14 +118,14 @@ State BaseEnv::step(const ActionMap& actions) {
         // Extract movement action (first mdim elements)
         std::vector<float> move_action(selected_action.begin(),
                                        selected_action.begin() + mdim);
-        force = action_to_force_continuous(move_action);
+        force = action_to_force_continuous(move_action, agent);
         action_idx = mdim;
       }
 
       if (!agent.silent && world_.dim_c > 0) {
         // Remaining elements are communication
-        agent.action.c = std::vector<float>(selected_action.begin() + action_idx,
-                                           selected_action.end());
+        agent.action.c = std::vector<float>(
+            selected_action.begin() + action_idx, selected_action.end());
       }
     } else {
       // Discrete actions: decompose single integer
@@ -131,8 +134,9 @@ State BaseEnv::step(const ActionMap& actions) {
       if (agent.movable) {
         // Extract movement from composite action
         int move_action = action_value % mdim;
-        force = action_to_force(move_action);
-        action_value = action_value / mdim;  // Remove movement, keep communication
+        force = action_to_force(move_action, agent);
+        action_value =
+            action_value / mdim;  // Remove movement, keep communication
       }
 
       if (!agent.silent && world_.dim_c > 0 && action_value < world_.dim_c) {
@@ -182,13 +186,14 @@ State BaseEnv::step(const ActionMap& actions) {
 std::vector<std::string> BaseEnv::get_agents() const { return agents_; }
 
 std::array<float, 2> BaseEnv::action_to_force_continuous(
-    const std::vector<float>& action) const {
+    const std::vector<float>& action, const Agent& a) const {
   // action is [no-op, left, right, down, up]
   // force_x = (right - left) * sensitivity
   // force_y = (up - down) * sensitivity
   assert(action.size() == 5 && "Action must be of size 5");
-  float force_x = (action[2] - action[1]) * SENSITIVITY;
-  float force_y = (action[4] - action[3]) * SENSITIVITY;
+  float sensitivity = a.accel.value_or(SENSITIVITY);
+  float force_x = (action[2] - action[1]) * sensitivity;
+  float force_y = (action[4] - action[3]) * sensitivity;
   return {force_x, force_y};
 }
 
@@ -199,14 +204,18 @@ RenderState BaseEnv::get_render_state() const {
   RenderState state;
   // Add all agent positions, velocities, and colors
   for (const auto& agent : world_.agents) {
-    state[agent.name + "_pos"] = std::vector<float>(agent.state.p_pos.begin(), agent.state.p_pos.end());
-    state[agent.name + "_vel"] = std::vector<float>(agent.state.p_vel.begin(), agent.state.p_vel.end());
-    state[agent.name + "_color"] = std::vector<float>(agent.color.begin(), agent.color.end());
+    state[agent.name + "_pos"] =
+        std::vector<float>(agent.state.p_pos.begin(), agent.state.p_pos.end());
+    state[agent.name + "_vel"] =
+        std::vector<float>(agent.state.p_vel.begin(), agent.state.p_vel.end());
+    state[agent.name + "_color"] =
+        std::vector<float>(agent.color.begin(), agent.color.end());
   }
   // Add all landmark positions
   for (size_t i = 0; i < world_.landmarks.size(); ++i) {
     state["landmark_" + std::to_string(i) + "_pos"] =
-        std::vector<float>(world_.landmarks[i].state.p_pos.begin(), world_.landmarks[i].state.p_pos.end());
+        std::vector<float>(world_.landmarks[i].state.p_pos.begin(),
+                           world_.landmarks[i].state.p_pos.end());
   }
   return state;
 }

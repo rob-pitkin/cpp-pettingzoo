@@ -35,9 +35,9 @@ class BaseEnv {
   Scenario& scenario_;
   World& world_;
 
-  std::array<float, 2> action_to_force(int action) const;
+  std::array<float, 2> action_to_force(int action, const Agent& a) const;
   std::array<float, 2> action_to_force_continuous(
-      const std::vector<float>& action) const;
+      const std::vector<float>& action, const Agent& a) const;
 };
 
 }  // namespace cpp_pettingzoo::core
