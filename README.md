@@ -51,14 +51,143 @@ env = simple_spread_v3.parallel_env()
 # After (cpp-mpe2)
 from cpp_mpe2.simple_spread.simple_spread import parallel_env
 env = parallel_env()
-
-obs, _ = env.reset(seed=0)
-for _ in range(25):
-    actions = {a: env.action_space(a).sample() for a in env.agents}
-    obs, rewards, terms, truncs, infos = env.step(actions)
 ```
 
-Both `ParallelEnv` and AEC APIs are supported. `env(...)` returns the AEC-wrapped form, `parallel_env(...)` returns the parallel form.
+### Import paths
+
+Every environment lives at `cpp_mpe2.<env_name>.<env_name>` and exposes three constructors:
+
+| Constructor | Returns | Use for |
+|---|---|---|
+| `parallel_env(**kwargs)` | PettingZoo `ParallelEnv` | All agents step in parallel — the fast path for RL training |
+| `env(**kwargs)` | PettingZoo AEC env | Turn-based stepping, one agent at a time |
+| `raw_env(**kwargs)` | Same as `parallel_env` | Alias matching mpe2's naming convention |
+
+```python
+from cpp_mpe2.simple_spread.simple_spread import parallel_env, env, raw_env
+from cpp_mpe2.simple_world_comm.simple_world_comm import parallel_env as swc
+from cpp_mpe2.simple_tag.simple_tag import parallel_env as tag
+# ... one import per env, same pattern
+```
+
+### Parallel API (recommended for training)
+
+All agents act simultaneously each step. This is the format most MARL training loops want.
+
+```python
+from cpp_mpe2.simple_spread.simple_spread import parallel_env
+
+env = parallel_env(max_cycles=25)
+obs, infos = env.reset(seed=42)
+
+while env.agents:
+    actions = {a: env.action_space(a).sample() for a in env.agents}
+    obs, rewards, terminations, truncations, infos = env.step(actions)
+    # train your policy here
+```
+
+`env.agents` becomes empty when the episode ends (truncation or termination), which is the natural loop exit condition.
+
+### AEC API (turn-based)
+
+One agent acts per step, in a fixed cycle order. Useful when your algorithm needs strict sequential semantics.
+
+```python
+from cpp_mpe2.simple_spread.simple_spread import env as aec_env
+
+env = aec_env(max_cycles=25)
+env.reset(seed=42)
+
+for agent in env.agent_iter():
+    obs, reward, termination, truncation, info = env.last()
+    action = None if (termination or truncation) else env.action_space(agent).sample()
+    env.step(action)
+```
+
+### Inspecting spaces
+
+Spaces are per-agent (not shared) because several environments are asymmetric:
+
+```python
+env = parallel_env()
+env.reset(seed=0)
+
+for agent in env.possible_agents:
+    print(agent, env.observation_space(agent), env.action_space(agent))
+# agent_0 Box(-inf, inf, (18,), float32) Discrete(5)
+# agent_1 Box(-inf, inf, (18,), float32) Discrete(5)
+# agent_2 Box(-inf, inf, (18,), float32) Discrete(5)
+```
+
+For asymmetric envs (`SimpleSpeakerListener`, `SimpleWorldComm`, `SimpleCrypto`, `SimpleAdversary`, `SimplePush`), different agents have different shapes:
+
+```python
+from cpp_mpe2.simple_world_comm.simple_world_comm import parallel_env
+env = parallel_env(); env.reset(seed=0)
+env.action_space("leadadversary_0")  # Discrete(20) — movement × comm
+env.action_space("adversary_0")      # Discrete(5)  — movement only
+env.observation_space("agent_0")     # Box (28,)    — good agent
+env.observation_space("adversary_0") # Box (34,)    — includes leader's comm
+```
+
+### Continuous actions
+
+Every env supports both discrete and continuous action spaces via the `continuous_actions` kwarg (matches mpe2):
+
+```python
+env = parallel_env(continuous_actions=True)
+env.reset(seed=0)
+env.action_space("agent_0")  # Box(0.0, 1.0, (5,), float32)
+# Movement actions are interpreted as [no_op, left, right, down, up] forces.
+```
+
+### Rendering
+
+Pass `render_mode="rgb_array"` for an `(H, W, 3)` numpy frame or `"human"` for an interactive pygame window. Default is no rendering.
+
+```python
+env = parallel_env(render_mode="rgb_array")
+env.reset(seed=0)
+frame = env.render()  # numpy array, shape (700, 700, 3), dtype uint8
+```
+
+Rendering is **lazy** — if `render_mode=None` (the default), no pygame state is created and there's zero per-step overhead. Always omit `render_mode` for training runs.
+
+### Common environment kwargs
+
+All envs accept these (with sensible defaults):
+
+| Kwarg | Type | Notes |
+|---|---|---|
+| `max_cycles` | `int` | Episode truncation length (default 25) |
+| `continuous_actions` | `bool` | Box action space if True, Discrete otherwise |
+| `render_mode` | `str \| None` | `"human"`, `"rgb_array"`, or `None` |
+| `dynamic_rescaling` | `bool` | Scale entity radii with the camera view |
+
+Plus per-env counts: `SimpleSpread` takes `N` agents/landmarks, `SimpleWorldComm` takes `num_good` / `num_adversaries` / `num_obstacles` / `num_food` / `num_forests`, etc. Check the `__init__` signature of any env's `parallel_env`.
+
+### Global state
+
+For centralized critics, `env.state()` returns a flat concatenation of all per-agent observations:
+
+```python
+env = parallel_env()
+env.reset(seed=0)
+state = env.state()  # np.float32 array, shape (sum of all agent obs sizes,)
+```
+
+### Working with the AEC wrappers from mpe2
+
+Because `env(...)` returns a `parallel_to_aec_wrapper`-wrapped env, it composes with PettingZoo's standard wrappers:
+
+```python
+from pettingzoo.utils import wrappers
+from cpp_mpe2.simple_spread.simple_spread import env
+
+e = env()
+e = wrappers.OrderEnforcingWrapper(e)
+e = wrappers.AssertOutOfBoundsWrapper(e)
+```
 
 ## Project structure
 
