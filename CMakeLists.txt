@@ -135,3 +135,12 @@ pybind11_add_module(_simple_world_comm
     core/world.cpp
     core/base_env.cpp
 )
+
+# Build pybind11 module for SimpleCrypto
+pybind11_add_module(_simple_crypto
+    cpp_pettingzoo/simple_crypto/cpp/bindings.cpp
+    cpp_pettingzoo/simple_crypto/cpp/simple_crypto_env.cpp
+    cpp_pettingzoo/simple_crypto/cpp/simple_crypto_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)

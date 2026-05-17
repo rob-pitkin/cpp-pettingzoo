@@ -43,11 +43,14 @@ Benchmarks comparing C++ implementation (cpp-pettingzoo) vs pure Python implemen
 | **SimpleWorldComm** | Resets | 115,432 | 2,861 | **40.34x** |
 | | Steps | 59,585 | 1,016 | **58.64x** |
 | | Episodes | 2,382 | 41 | **58.13x** |
+| **SimpleCrypto** | Resets | 522,255 | 37,259 | **14.02x** |
+| | Steps | 176,474 | 12,351 | **14.29x** |
+| | Episodes | 7,228 | 490 | **14.75x** |
 
 ## Key Findings
 
 ### Overall Performance
-- **Average speedup: 20.51x faster** than pure Python MPE2
+- **Average speedup: 19.99x faster** than pure Python MPE2
 - **Range: 6.23x - 58.64x** depending on environment and operation
 
 ### Environment-Specific Analysis
@@ -108,6 +111,12 @@ Benchmarks comparing C++ implementation (cpp-pettingzoo) vs pure Python implemen
 - Reset speedup (40.34x) is also the highest in the suite — 9 entities (6 agents + 3 landmark categories), each currently requiring numpy array allocations in mpe2 vs pre-allocated `std::array<float, 2>` slots in C++
 - The asymmetric action space (leader has Discrete(20), others have Discrete(5)) added zero new C++ code — `BaseEnv::step` already decomposed `action % 5` (movement) and `action / 5` (comm one-hot) for any non-silent agent, originally built for SimpleReference
 
+**SimpleCrypto (3 immovable agents — Alice/Bob/Eve, 2 landmarks):**
+- **Lowest step speedup of any communication env: 14.02x / 14.29x / 14.75x** — and that's precisely the point. SimpleCrypto is non-physical: all 3 agents are `movable=False, collide=False`, so the per-step C++ work is essentially zero (just write comm one-hots, compute squared-distance rewards over length-4 vectors)
+- When there's no physics to amortize, Python wrapper overhead (dict construction, numpy conversion at the boundary) dominates — both sides become ~equally fast at the inner loop, leaving only the constant Python-call overhead as the visible gap
+- Tight cluster of reset/step/episode ratios (14.0/14.3/14.7) is the most uniform in the suite — confirms there's no algorithmic asymmetry; the speedup is pure interpreter overhead, not better algorithms
+- Zero new C++ code needed for action handling — `BaseEnv::step`'s existing logic skips movement decomposition when `movable=False` and treats the raw Discrete(4) action as a direct comm one-hot index
+
 ### Performance Insights
 
 1. **Release build matters significantly**: Prior Debug-mode numbers showed 2-4x; Release shows 9-40x
@@ -150,6 +159,9 @@ uv run python cpp_pettingzoo/benchmark_collect_treasure.py
 
 # SimpleWorldComm environment
 uv run python cpp_pettingzoo/benchmark_simple_world_comm.py
+
+# SimpleCrypto environment
+uv run python cpp_pettingzoo/benchmark_simple_crypto.py
 ```
 
 ## Benchmark Details
@@ -160,4 +172,4 @@ Each benchmark measures three operations:
 2. **Steps**: Environment dynamics with random actions (1M steps, auto-reset on done)
 3. **Episodes**: Complete episodes with 25 steps each (100K episodes)
 
-All benchmarks use discrete action spaces. Communication in SimpleReference uses Discrete(50) (10 communication words × 5 movement actions). SimpleSpeakerListener uses asymmetric discrete action spaces: speaker Discrete(3), listener Discrete(5). SimpleAdversary uses Discrete(5) for all agents (movement only, no communication despite dim_c=2). SimpleTag uses Discrete(5) for all agents (3 adversaries + 1 good agent) with default full observability (no partial observability neighbors set). SimplePush uses Discrete(5) for both agents; the good agent's observation encodes goal identity via landmark colors. SimpleFormation uses Discrete(5) for all 4 agents with a single central landmark; optimal agent-to-slot matching uses the Munkres algorithm (munkres-cpp) with results cached per step. SimpleLine uses Discrete(5) for all 4 agents with 2 line-endpoint landmarks; target positions are fixed at reset and reused across all steps of the episode. CollectTreasure uses Discrete(5) for all 8 agents (6 collectors + 2 deposits) with 6 treasure landmarks; pickup/delivery/respawn logic runs in a post_step hook between physics and reward computation. SimpleWorldComm uses asymmetric discrete action spaces: the leader (`leadadversary_0`) has Discrete(20) = 5 movement × 4 communication words, while the 3 normal adversaries and 2 good agents each have Discrete(5) (movement only). Observations are also asymmetric (34 for adversaries including the 4-channel leader comm, 28 for good agents). Three landmark subtypes (1 obstacle, 2 food, 2 forests) share the `world.landmarks` vector and are distinguished by a `subtype` tag on `core::Landmark`. Forest-based partial observability: agents only see others if they share a forest, neither is in any forest, or self is the leader.
+All benchmarks use discrete action spaces. Communication in SimpleReference uses Discrete(50) (10 communication words × 5 movement actions). SimpleSpeakerListener uses asymmetric discrete action spaces: speaker Discrete(3), listener Discrete(5). SimpleAdversary uses Discrete(5) for all agents (movement only, no communication despite dim_c=2). SimpleTag uses Discrete(5) for all agents (3 adversaries + 1 good agent) with default full observability (no partial observability neighbors set). SimplePush uses Discrete(5) for both agents; the good agent's observation encodes goal identity via landmark colors. SimpleFormation uses Discrete(5) for all 4 agents with a single central landmark; optimal agent-to-slot matching uses the Munkres algorithm (munkres-cpp) with results cached per step. SimpleLine uses Discrete(5) for all 4 agents with 2 line-endpoint landmarks; target positions are fixed at reset and reused across all steps of the episode. CollectTreasure uses Discrete(5) for all 8 agents (6 collectors + 2 deposits) with 6 treasure landmarks; pickup/delivery/respawn logic runs in a post_step hook between physics and reward computation. SimpleWorldComm uses asymmetric discrete action spaces: the leader (`leadadversary_0`) has Discrete(20) = 5 movement × 4 communication words, while the 3 normal adversaries and 2 good agents each have Discrete(5) (movement only). Observations are also asymmetric (34 for adversaries including the 4-channel leader comm, 28 for good agents). Three landmark subtypes (1 obstacle, 2 food, 2 forests) share the `world.landmarks` vector and are distinguished by a `subtype` tag on `core::Landmark`. Forest-based partial observability: agents only see others if they share a forest, neither is in any forest, or self is the leader. SimpleCrypto uses Discrete(4) for all 3 agents (alice/bob/eve), all of which are non-physical (`movable=False, collide=False`); the action is a pure communication one-hot with no movement component, and rewards are MSE between agent communication outputs and the goal landmark's color one-hot.
