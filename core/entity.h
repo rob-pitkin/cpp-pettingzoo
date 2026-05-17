@@ -45,6 +45,7 @@ class Landmark : public Entity {
   int index = 0;
   bool alive = true;
   int treasure_type = 0;
+  int subtype = 0;  // generic subtype tag (e.g. obstacle/food/forest in simple_world_comm)
 
   Landmark() = default;
   explicit Landmark(std::string n) : Entity(std::move(n)) {};
@@ -65,6 +66,7 @@ class Agent : public Entity {
   bool collector = false;
   std::optional<int> holding = std::nullopt;
   int deposit_type = -1;
+  bool leader = false;
 
   Agent() { movable = true; }
   explicit Agent(std::string n, size_t dim_c)

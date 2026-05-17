@@ -40,12 +40,15 @@ Benchmarks comparing C++ implementation (cpp-pettingzoo) vs pure Python implemen
 | **CollectTreasure** | Resets | 40,690 | 1,992 | **20.42x** |
 | | Steps | 29,200 | 735 | **39.72x** |
 | | Episodes | 1,172 | 29 | **39.84x** |
+| **SimpleWorldComm** | Resets | 115,432 | 2,861 | **40.34x** |
+| | Steps | 59,585 | 1,016 | **58.64x** |
+| | Episodes | 2,382 | 41 | **58.13x** |
 
 ## Key Findings
 
 ### Overall Performance
-- **Average speedup: 17.32x faster** than pure Python MPE2
-- **Range: 6.23x - 39.84x** depending on environment and operation
+- **Average speedup: 20.51x faster** than pure Python MPE2
+- **Range: 6.23x - 58.64x** depending on environment and operation
 
 ### Environment-Specific Analysis
 
@@ -98,6 +101,13 @@ Benchmarks comparing C++ implementation (cpp-pettingzoo) vs pure Python implemen
 - Reset speedup (20.42x) is also strong: mpe2 allocates numpy arrays per-agent per-reset; C++ reuses pre-allocated vectors
 - The `post_step` hook (pickup → respawn → delivery, all in C++ before reward computation) is the key architectural win — mpe2 had to override `_execute_world_step` entirely for this; our virtual no-op in BaseEnv adds zero overhead to all other environments
 
+**SimpleWorldComm (1 leader + 3 adversaries + 2 good agents, 1 obstacle + 2 food + 2 forests):**
+- **Highest speedup in the entire suite: 40.34x / 58.64x / 58.13x** — by a wide margin, this is the env where Python's overhead hurts most
+- mpe2's `observation()` is the bottleneck: for every (self, other) agent pair it computes forest-membership flags by iterating all forests with numpy `is_collision` calls, then runs a `for/else` Python control-flow pattern to decide whether to include real positions or zero-pad. With 6 agents × 5 other-agents × 2 forests per observation, that's hundreds of numpy ops per step in pure Python; C++ replaces all of it with tight nested loops over plain `float`s
+- 4-channel communication (`dim_c=4`) is also broadcast to every adversary every step; mpe2 builds a per-other-agent `comm` list then unconditionally overwrites it with `[world.agents[0].state.c]` — the C++ version skips the wasted loop entirely
+- Reset speedup (40.34x) is also the highest in the suite — 9 entities (6 agents + 3 landmark categories), each currently requiring numpy array allocations in mpe2 vs pre-allocated `std::array<float, 2>` slots in C++
+- The asymmetric action space (leader has Discrete(20), others have Discrete(5)) added zero new C++ code — `BaseEnv::step` already decomposed `action % 5` (movement) and `action / 5` (comm one-hot) for any non-silent agent, originally built for SimpleReference
+
 ### Performance Insights
 
 1. **Release build matters significantly**: Prior Debug-mode numbers showed 2-4x; Release shows 9-40x
@@ -137,6 +147,9 @@ uv run python cpp_pettingzoo/benchmark_simple_line.py
 
 # CollectTreasure environment
 uv run python cpp_pettingzoo/benchmark_collect_treasure.py
+
+# SimpleWorldComm environment
+uv run python cpp_pettingzoo/benchmark_simple_world_comm.py
 ```
 
 ## Benchmark Details
@@ -147,4 +160,4 @@ Each benchmark measures three operations:
 2. **Steps**: Environment dynamics with random actions (1M steps, auto-reset on done)
 3. **Episodes**: Complete episodes with 25 steps each (100K episodes)
 
-All benchmarks use discrete action spaces. Communication in SimpleReference uses Discrete(50) (10 communication words × 5 movement actions). SimpleSpeakerListener uses asymmetric discrete action spaces: speaker Discrete(3), listener Discrete(5). SimpleAdversary uses Discrete(5) for all agents (movement only, no communication despite dim_c=2). SimpleTag uses Discrete(5) for all agents (3 adversaries + 1 good agent) with default full observability (no partial observability neighbors set). SimplePush uses Discrete(5) for both agents; the good agent's observation encodes goal identity via landmark colors. SimpleFormation uses Discrete(5) for all 4 agents with a single central landmark; optimal agent-to-slot matching uses the Munkres algorithm (munkres-cpp) with results cached per step. SimpleLine uses Discrete(5) for all 4 agents with 2 line-endpoint landmarks; target positions are fixed at reset and reused across all steps of the episode. CollectTreasure uses Discrete(5) for all 8 agents (6 collectors + 2 deposits) with 6 treasure landmarks; pickup/delivery/respawn logic runs in a post_step hook between physics and reward computation.
+All benchmarks use discrete action spaces. Communication in SimpleReference uses Discrete(50) (10 communication words × 5 movement actions). SimpleSpeakerListener uses asymmetric discrete action spaces: speaker Discrete(3), listener Discrete(5). SimpleAdversary uses Discrete(5) for all agents (movement only, no communication despite dim_c=2). SimpleTag uses Discrete(5) for all agents (3 adversaries + 1 good agent) with default full observability (no partial observability neighbors set). SimplePush uses Discrete(5) for both agents; the good agent's observation encodes goal identity via landmark colors. SimpleFormation uses Discrete(5) for all 4 agents with a single central landmark; optimal agent-to-slot matching uses the Munkres algorithm (munkres-cpp) with results cached per step. SimpleLine uses Discrete(5) for all 4 agents with 2 line-endpoint landmarks; target positions are fixed at reset and reused across all steps of the episode. CollectTreasure uses Discrete(5) for all 8 agents (6 collectors + 2 deposits) with 6 treasure landmarks; pickup/delivery/respawn logic runs in a post_step hook between physics and reward computation. SimpleWorldComm uses asymmetric discrete action spaces: the leader (`leadadversary_0`) has Discrete(20) = 5 movement × 4 communication words, while the 3 normal adversaries and 2 good agents each have Discrete(5) (movement only). Observations are also asymmetric (34 for adversaries including the 4-channel leader comm, 28 for good agents). Three landmark subtypes (1 obstacle, 2 food, 2 forests) share the `world.landmarks` vector and are distinguished by a `subtype` tag on `core::Landmark`. Forest-based partial observability: agents only see others if they share a forest, neither is in any forest, or self is the leader.

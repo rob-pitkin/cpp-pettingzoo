@@ -126,3 +126,12 @@ pybind11_add_module(_collect_treasure
     core/world.cpp
     core/base_env.cpp
 )
+
+# Build pybind11 module for SimpleWorldComm
+pybind11_add_module(_simple_world_comm
+    cpp_pettingzoo/simple_world_comm/cpp/bindings.cpp
+    cpp_pettingzoo/simple_world_comm/cpp/simple_world_comm_env.cpp
+    cpp_pettingzoo/simple_world_comm/cpp/simple_world_comm_scenario.cpp
+    core/world.cpp
+    core/base_env.cpp
+)
