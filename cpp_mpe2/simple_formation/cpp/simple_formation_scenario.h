@@ -15,6 +15,7 @@ class SimpleFormationScenario : public core::Scenario {
   void make_world(core::World& w, int N = 4);
   void make_world(core::World& w) override { make_world(w, 4); }
   void reset_world(core::World& w) override;
+  void post_step(core::World& w) override { cache_valid_ = false; }
   float reward(const core::Agent& agent,
                const core::World& world) const override { return 0.0f; }
   float global_reward(const core::World& world) const override;
