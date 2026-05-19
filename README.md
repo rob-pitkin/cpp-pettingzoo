@@ -1,6 +1,6 @@
 # cpp-mpe2
 
-Fast C++ implementations of [Farama mpe2](https://mpe2.farama.org/) (Multi-Agent Particle Environments) with a [PettingZoo](https://pettingzoo.farama.org/)-compatible Python API. Drop-in replacement for `mpe2` with **6–58× faster** rollouts.
+Fast C++ implementations of [Farama mpe2](https://mpe2.farama.org/) (Multi-Agent Particle Environments) with a [PettingZoo](https://pettingzoo.farama.org/)-compatible Python API. Drop-in replacement for `mpe2` with **7–55× faster** rollouts.
 
 ## What's here
 
@@ -8,20 +8,20 @@ Every environment in `mpe2` has a C++ implementation built on a shared `core::Ba
 
 | Environment | Description | Step speedup vs mpe2 |
 |---|---|---|
-| **Simple** | 1 agent, 1 landmark — the basic single-agent task | 15.13× |
-| **SimpleSpread** | 3 cooperative agents covering 3 landmarks | 20.89× |
-| **SimpleReference** | 2 agents with 10-word communication to identify goals | 15.20× |
-| **SimpleSpeakerListener** | Asymmetric speaker/listener task | 16.01× |
-| **SimpleAdversary** | 1 adversary + N good agents racing to a goal | 14.93× |
-| **SimpleTag** | 3 adversaries chase 1 good agent (predator-prey) | 17.93× |
-| **SimplePush** | 1 adversary tries to push 1 good agent off-goal | 13.81× |
-| **SimpleFormation** | 4 agents form a moving formation (Hungarian matching) | 21.60× |
-| **SimpleLine** | 4 agents arrange themselves along a line | 19.85× |
-| **CollectTreasure** | 6 collectors + 2 deposits + 6 respawning treasures | 39.72× |
-| **SimpleWorldComm** | Leader adversary + comms + forest visibility | **58.64×** |
-| **SimpleCrypto** | Alice/Bob/Eve — encrypted message passing | 14.29× |
+| **Simple** | 1 agent, 1 landmark — the basic single-agent task | 13.56× |
+| **SimpleSpread** | 3 cooperative agents covering 3 landmarks | 22.45× |
+| **SimpleReference** | 2 agents with 10-word communication to identify goals | 15.53× |
+| **SimpleSpeakerListener** | Asymmetric speaker/listener task | 15.68× |
+| **SimpleAdversary** | 1 adversary + N good agents racing to a goal | 15.16× |
+| **SimpleTag** | 3 adversaries chase 1 good agent (predator-prey) | 18.96× |
+| **SimplePush** | 1 adversary tries to push 1 good agent off-goal | 13.43× |
+| **SimpleFormation** | 4 agents form a moving formation (Hungarian matching) | 17.56× |
+| **SimpleLine** | 4 agents arrange themselves along a line | 16.30× |
+| **CollectTreasure** | 6 collectors + 2 deposits + 6 respawning treasures | 38.03× |
+| **SimpleWorldComm** | Leader adversary + comms + forest visibility | **54.81×** |
+| **SimpleCrypto** | Alice/Bob/Eve — encrypted message passing | 12.47× |
 
-**Average step speedup: 20.0× | Range: 6.2× – 58.6×**
+**Average step speedup: 19.2× | Range: 7.2× – 54.8×**
 
 Full results (reset/step/episode breakdown, hardware, methodology) in [`BENCHMARKS.md`](BENCHMARKS.md).
 

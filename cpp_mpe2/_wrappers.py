@@ -13,6 +13,9 @@ import numpy as np
 from pettingzoo.utils import wrappers
 from pettingzoo.utils.conversions import parallel_to_aec_wrapper
 
+# Cached for hot-path isinstance() check.
+_INT_TYPES = (int, np.integer)
+
 
 def check_and_maybe_clip_actions(actions, action_space_fn, continuous_actions):
     """Validate (discrete) or clip (continuous) per-agent actions in-place.
@@ -21,6 +24,9 @@ def check_and_maybe_clip_actions(actions, action_space_fn, continuous_actions):
     pettingzoo, but applied at the parallel-env level. Returns a dict of
     (possibly clipped) actions; raises AssertionError for invalid discrete
     actions.
+
+    Hot-path optimized: skips space.contains() and uses a direct bounds
+    check (`0 <= val < space.n`) for Discrete spaces.
     """
     if continuous_actions:
         # Clip to [low, high] for each agent's Box space.
@@ -29,16 +35,21 @@ def check_and_maybe_clip_actions(actions, action_space_fn, continuous_actions):
             space = action_space_fn(agent)
             result[agent] = np.clip(action, space.low, space.high)
         return result
-    # Discrete: assert in range.
+    # Discrete fast path: avoid space.contains() (which constructs a numpy int
+    # and dispatches through gymnasium's space machinery) — just check bounds.
     for agent, action in actions.items():
-        space = action_space_fn(agent)
-        # Accept Python int, numpy int, or 1-element array
-        val = action
-        if hasattr(val, "__len__"):
-            val = val[0] if len(val) > 0 else val
-        assert space.contains(int(val)), (
-            f"action {action} for agent {agent} is not in action space {space}"
-        )
+        # Unwrap a 1-element sequence to its scalar.
+        if isinstance(action, _INT_TYPES):
+            val = action
+        else:
+            # numpy array, list, etc. — pull element 0 if non-empty.
+            val = int(action[0]) if len(action) > 0 else action
+        n = action_space_fn(agent).n
+        if not (0 <= val < n):
+            raise AssertionError(
+                f"action {action} for agent {agent} is not in action space "
+                f"Discrete({n})"
+            )
     return actions
 
 

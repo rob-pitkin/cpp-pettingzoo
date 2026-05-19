@@ -10,48 +10,48 @@ Benchmarks comparing C++ implementation (cpp-mpe2) vs pure Python implementation
 
 | Environment | Metric | C++ (ops/sec) | Python (ops/sec) | Speedup |
 |-------------|--------|---------------|------------------|---------|
-| **Simple** | Resets | 982,152 | 100,763 | **9.75x** |
-| | Steps | 538,869 | 35,623 | **15.13x** |
-| | Episodes | 22,488 | 1,438 | **15.64x** |
-| **SimpleSpread** | Resets | 315,470 | 35,936 | **8.78x** |
-| | Steps | 161,036 | 7,709 | **20.89x** |
-| | Episodes | 6,502 | 317 | **20.53x** |
-| **SimpleReference** | Resets | 433,989 | 36,194 | **11.99x** |
-| | Steps | 248,318 | 16,342 | **15.20x** |
-| | Episodes | 10,205 | 641 | **15.92x** |
-| **SimpleSpeakerListener** | Resets | 591,300 | 42,495 | **13.91x** |
-| | Steps | 319,597 | 19,966 | **16.01x** |
-| | Episodes | 13,040 | 799 | **16.32x** |
-| **SimpleAdversary** | Resets | 477,898 | 35,164 | **13.59x** |
-| | Steps | 172,841 | 11,580 | **14.93x** |
-| | Episodes | 7,094 | 464 | **15.28x** |
-| **SimpleTag** | Resets | 197,755 | 31,725 | **6.23x** |
-| | Steps | 92,890 | 5,182 | **17.93x** |
-| | Episodes | 3,853 | 195 | **19.73x** |
-| **SimplePush** | Resets | 537,179 | 43,469 | **12.36x** |
-| | Steps | 220,386 | 15,960 | **13.81x** |
-| | Episodes | 9,127 | 645 | **14.14x** |
-| **SimpleFormation** | Resets | 399,064 | 39,599 | **10.08x** |
-| | Steps | 136,006 | 6,297 | **21.60x** |
-| | Episodes | 5,515 | 253 | **21.83x** |
-| **SimpleLine** | Resets | 358,930 | 19,817 | **18.11x** |
-| | Steps | 130,706 | 6,586 | **19.85x** |
-| | Episodes | 5,286 | 263 | **20.09x** |
-| **CollectTreasure** | Resets | 40,690 | 1,992 | **20.42x** |
-| | Steps | 29,200 | 735 | **39.72x** |
-| | Episodes | 1,172 | 29 | **39.84x** |
-| **SimpleWorldComm** | Resets | 115,432 | 2,861 | **40.34x** |
-| | Steps | 59,585 | 1,016 | **58.64x** |
-| | Episodes | 2,382 | 41 | **58.13x** |
-| **SimpleCrypto** | Resets | 522,255 | 37,259 | **14.02x** |
-| | Steps | 176,474 | 12,351 | **14.29x** |
-| | Episodes | 7,228 | 490 | **14.75x** |
+| **Simple** | Resets | 1,031,407 | 98,107 | **10.51x** |
+| | Steps | 476,500 | 35,132 | **13.56x** |
+| | Episodes | 20,004 | 1,395 | **14.35x** |
+| **SimpleSpread** | Resets | 322,504 | 31,971 | **10.09x** |
+| | Steps | 162,353 | 7,231 | **22.45x** |
+| | Episodes | 6,533 | 289 | **22.61x** |
+| **SimpleReference** | Resets | 438,053 | 41,202 | **10.63x** |
+| | Steps | 228,932 | 14,739 | **15.53x** |
+| | Episodes | 9,501 | 596 | **15.95x** |
+| **SimpleSpeakerListener** | Resets | 595,693 | 43,623 | **13.66x** |
+| | Steps | 287,273 | 18,322 | **15.68x** |
+| | Episodes | 12,005 | 733 | **16.37x** |
+| **SimpleAdversary** | Resets | 472,260 | 35,195 | **13.42x** |
+| | Steps | 160,047 | 10,561 | **15.16x** |
+| | Episodes | 6,450 | 422 | **15.30x** |
+| **SimpleTag** | Resets | 194,785 | 26,911 | **7.24x** |
+| | Steps | 90,213 | 4,757 | **18.96x** |
+| | Episodes | 3,629 | 190 | **19.07x** |
+| **SimplePush** | Resets | 540,899 | 45,076 | **12.00x** |
+| | Steps | 201,667 | 15,015 | **13.43x** |
+| | Episodes | 8,364 | 596 | **14.03x** |
+| **SimpleFormation** | Resets | 395,661 | 39,435 | **10.03x** |
+| | Steps | 111,015 | 6,324 | **17.56x** |
+| | Episodes | 4,502 | 254 | **17.75x** |
+| **SimpleLine** | Resets | 347,669 | 19,808 | **17.55x** |
+| | Steps | 106,602 | 6,539 | **16.30x** |
+| | Episodes | 4,314 | 262 | **16.44x** |
+| **CollectTreasure** | Resets | 40,307 | 1,983 | **20.33x** |
+| | Steps | 27,960 | 735 | **38.03x** |
+| | Episodes | 1,123 | 29 | **38.12x** |
+| **SimpleWorldComm** | Resets | 113,283 | 2,848 | **39.78x** |
+| | Steps | 56,043 | 1,022 | **54.81x** |
+| | Episodes | 2,241 | 41 | **54.75x** |
+| **SimpleCrypto** | Resets | 483,784 | 35,265 | **13.72x** |
+| | Steps | 153,192 | 12,285 | **12.47x** |
+| | Episodes | 6,419 | 493 | **13.03x** |
 
 ## Key Findings
 
 ### Overall Performance
-- **Average speedup: 19.99x faster** than pure Python MPE2
-- **Range: 6.23x - 58.64x** depending on environment and operation
+- **Average speedup: 19.19x faster** than pure Python MPE2
+- **Range: 7.24x - 54.81x** depending on environment and operation
 
 ### Environment-Specific Analysis
 
@@ -61,7 +61,7 @@ Benchmarks comparing C++ implementation (cpp-mpe2) vs pure Python implementation
 - Reset is ~10x — Python overhead amortized across more work in steps/episodes
 
 **SimpleSpread (3 agents, 3 landmarks):**
-- **Best step/episode speedup**: 20.89x and 20.53x
+- Strong step/episode speedup: 22.45x and 22.61x
 - Physics-heavy with collision detection; C++ benefits compound with more agents
 - Global reward computation (min-distance per landmark) is particularly fast in C++
 
@@ -70,9 +70,9 @@ Benchmarks comparing C++ implementation (cpp-mpe2) vs pure Python implementation
 - Composite action space (Discrete(50): 10 comm × 5 movement) decomposition is efficient in C++
 
 **SimpleSpeakerListener (2 agents, 3 landmarks, 3-word communication):**
-- **Best reset performance**: 591K resets/sec (13.91x)
+- Strong reset performance: 596K resets/sec (13.66x)
 - Asymmetric agents and action spaces handled efficiently
-- Strong 16x episode speedup from efficient asymmetric action decomposition
+- Solid ~16x episode speedup from efficient asymmetric action decomposition
 
 **SimpleAdversary (1 adversary + N good agents, N landmarks):**
 - Consistent ~14-15x speedup
@@ -80,8 +80,8 @@ Benchmarks comparing C++ implementation (cpp-mpe2) vs pure Python implementation
 - Adversarial reward structure (asymmetric goals) has no measurable overhead vs cooperative envs
 
 **SimpleTag (3 adversaries + 1 good agent, 2 obstacles):**
-- **Lowest reset speedup: 6.23x** — 4 agents means heavier per-reset Python overhead (observation dict construction, numpy conversions) relative to the C++ reset work
-- **Strong step/episode speedup: 17.93x / 19.73x** — collision detection across all (adversary, good) pairs and the `bound()` penalty are cheap in C++
+- **Lowest reset speedup: 7.24x** — 4 agents means heavier per-reset Python overhead (observation dict construction, numpy conversions) relative to the C++ reset work
+- **Strong step/episode speedup: 18.96x / 19.07x** — collision detection across all (adversary, good) pairs and the `bound()` penalty are cheap in C++
 - The reset/step gap is the widest of any environment: Python wrapper overhead dominates resets but is amortized away over a 25-step episode
 
 **SimplePush (1 adversary + 1 good agent, 2 landmarks):**
@@ -90,31 +90,31 @@ Benchmarks comparing C++ implementation (cpp-mpe2) vs pure Python implementation
 - The asymmetric observation (good agent encodes goal color; adversary does not) adds negligible C++ cost vs the Python equivalent
 
 **SimpleFormation (4 cooperative agents, 1 central landmark):**
-- **Best step/episode speedup in the suite: 21.60x / 21.83x** — Hungarian matching via munkres-cpp runs in microseconds; Python equivalent calls scipy's linear_sum_assignment each step
-- Reset speedup (10.08x) is moderate: the C++ reset is lightweight (random positions only) so Python wrapper overhead is proportionally larger
-- Pure global reward (local_ratio=0.0) means all 4 agents share the same scalar per step; the mutable cache (`cache_valid_` flag) ensures the Munkres solve runs exactly once per step even though global_reward() is called N times
+- Strong step/episode speedup: 17.56x / 17.75x — Hungarian matching via munkres-cpp runs in microseconds; Python equivalent calls scipy's linear_sum_assignment each step
+- Reset speedup (10.03x) is moderate: the C++ reset is lightweight (random positions only) so Python wrapper overhead is proportionally larger
+- Pure global reward (local_ratio=0.0) means all 4 agents share the same scalar per step; the mutable cache (`cache_valid_` flag) ensures the Munkres solve runs exactly once per step but is invalidated in `post_step` so each step starts fresh
 
 **SimpleLine (4 cooperative agents, 2 line-endpoint landmarks):**
-- Strong consistent speedup: **18.11x / 19.85x / 20.09x** across all operations
+- Strong consistent speedup: **17.55x / 16.30x / 16.44x** across all operations
 - Target positions are fixed at reset (the line doesn't move), so `compute_line` only solves Munkres each step — no per-step target geometry recomputation unlike SimpleFormation's rotating circle
-- mpe2's reset is heavier than Formation's (placing lm1 via angular search loop in Python) which inflates the reset speedup to 18x despite 2 agents vs Formation's 1 landmark reset
+- mpe2's reset is heavier than Formation's (placing lm1 via angular search loop in Python) which inflates the reset speedup to 17.5x despite 2 agents vs Formation's 1 landmark reset
 
 **CollectTreasure (6 collectors + 2 deposits, 6 treasure landmarks):**
-- **Highest step/episode speedup in the suite: 39.72x / 39.84x** — the gap comes from mpe2's Python loop over all (collector, treasure) and (collector, deposit) pairs for pickup/delivery/reward, plus distance-sorted observation construction every step; all of this is O(agents × treasures) Python iteration vs tight C++ loops
-- Reset speedup (20.42x) is also strong: mpe2 allocates numpy arrays per-agent per-reset; C++ reuses pre-allocated vectors
+- **Highest step/episode speedup in the suite outside SimpleWorldComm: 38.03x / 38.12x** — the gap comes from mpe2's Python loop over all (collector, treasure) and (collector, deposit) pairs for pickup/delivery/reward, plus distance-sorted observation construction every step; all of this is O(agents × treasures) Python iteration vs tight C++ loops
+- Reset speedup (20.33x) is also strong: mpe2 allocates numpy arrays per-agent per-reset; C++ reuses pre-allocated vectors
 - The `post_step` hook (pickup → respawn → delivery, all in C++ before reward computation) is the key architectural win — mpe2 had to override `_execute_world_step` entirely for this; our virtual no-op in BaseEnv adds zero overhead to all other environments
 
 **SimpleWorldComm (1 leader + 3 adversaries + 2 good agents, 1 obstacle + 2 food + 2 forests):**
-- **Highest speedup in the entire suite: 40.34x / 58.64x / 58.13x** — by a wide margin, this is the env where Python's overhead hurts most
+- **Highest speedup in the entire suite: 39.78x / 54.81x / 54.75x** — by a wide margin, this is the env where Python's overhead hurts most
 - mpe2's `observation()` is the bottleneck: for every (self, other) agent pair it computes forest-membership flags by iterating all forests with numpy `is_collision` calls, then runs a `for/else` Python control-flow pattern to decide whether to include real positions or zero-pad. With 6 agents × 5 other-agents × 2 forests per observation, that's hundreds of numpy ops per step in pure Python; C++ replaces all of it with tight nested loops over plain `float`s
 - 4-channel communication (`dim_c=4`) is also broadcast to every adversary every step; mpe2 builds a per-other-agent `comm` list then unconditionally overwrites it with `[world.agents[0].state.c]` — the C++ version skips the wasted loop entirely
-- Reset speedup (40.34x) is also the highest in the suite — 9 entities (6 agents + 3 landmark categories), each currently requiring numpy array allocations in mpe2 vs pre-allocated `std::array<float, 2>` slots in C++
+- Reset speedup (39.78x) is also the highest in the suite — 9 entities (6 agents + 3 landmark categories), each currently requiring numpy array allocations in mpe2 vs pre-allocated `std::array<float, 2>` slots in C++
 - The asymmetric action space (leader has Discrete(20), others have Discrete(5)) added zero new C++ code — `BaseEnv::step` already decomposed `action % 5` (movement) and `action / 5` (comm one-hot) for any non-silent agent, originally built for SimpleReference
 
 **SimpleCrypto (3 immovable agents — Alice/Bob/Eve, 2 landmarks):**
-- **Lowest step speedup of any communication env: 14.02x / 14.29x / 14.75x** — and that's precisely the point. SimpleCrypto is non-physical: all 3 agents are `movable=False, collide=False`, so the per-step C++ work is essentially zero (just write comm one-hots, compute squared-distance rewards over length-4 vectors)
-- When there's no physics to amortize, Python wrapper overhead (dict construction, numpy conversion at the boundary) dominates — both sides become ~equally fast at the inner loop, leaving only the constant Python-call overhead as the visible gap
-- Tight cluster of reset/step/episode ratios (14.0/14.3/14.7) is the most uniform in the suite — confirms there's no algorithmic asymmetry; the speedup is pure interpreter overhead, not better algorithms
+- **Lowest step speedup of any communication env: 13.72x / 12.47x / 13.03x** — and that's precisely the point. SimpleCrypto is non-physical: all 3 agents are `movable=False, collide=False`, so the per-step C++ work is essentially zero (just write comm one-hots, compute squared-distance rewards over length-4 vectors)
+- When there's no physics to amortize, Python wrapper overhead (dict construction, numpy conversion, per-agent action validation at the boundary) dominates — both sides become ~equally fast at the inner loop, leaving only the constant Python-call overhead as the visible gap
+- Tight cluster of reset/step/episode ratios (13.7/12.5/13.0) is the most uniform in the suite — confirms there's no algorithmic asymmetry; the speedup is pure interpreter overhead, not better algorithms
 - Zero new C++ code needed for action handling — `BaseEnv::step`'s existing logic skips movement decomposition when `movable=False` and treats the raw Discrete(4) action as a direct comm one-hot index
 
 ### Performance Insights
