@@ -5,10 +5,10 @@ namespace cpp_mpe2::simple_spread {
 SimpleSpreadEnv::SimpleSpreadEnv(int max_cycles, bool dynamic_rescaling,
                                  bool continuous_actions, float local_ratio,
                                  bool curriculum, int curriculum_stage)
-    : world_(),
-      scenario_(curriculum, curriculum_stage),
-      BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
-              continuous_actions, local_ratio) {
+    : BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
+              continuous_actions, local_ratio),
+      world_(),
+      scenario_(curriculum, curriculum_stage) {
   scenario_.make_world(world_);
   world_.cache_entities();
 

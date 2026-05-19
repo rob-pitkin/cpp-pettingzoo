@@ -14,6 +14,7 @@ build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
 import _collect_treasure
+from cpp_mpe2._wrappers import check_and_maybe_clip_actions, make_aec_env
 from cpp_mpe2.core import Agent, Landmark, World
 
 _TYPE_COLORS = [
@@ -61,6 +62,7 @@ class parallel_env(ParallelEnv, EzPickle):
         continuous_actions=False,
         render_mode=None,
         dynamic_rescaling=False,
+         benchmark_data=False,
     ):
         EzPickle.__init__(
             self,
@@ -71,6 +73,7 @@ class parallel_env(ParallelEnv, EzPickle):
             continuous_actions=continuous_actions,
             render_mode=render_mode,
             dynamic_rescaling=dynamic_rescaling,
+             benchmark_data=benchmark_data,
         )
 
         self.num_collectors = num_collectors
@@ -157,6 +160,7 @@ class parallel_env(ParallelEnv, EzPickle):
         return observations, infos
 
     def step(self, actions):
+        actions = check_and_maybe_clip_actions(actions, self.action_space, self.continuous_actions)
         if not self.continuous_actions:
             actions = {
                 a: np.array([action], dtype=np.float32)
@@ -255,6 +259,4 @@ class parallel_env(ParallelEnv, EzPickle):
 
 
 def env(**kwargs):
-    aec_env = parallel_env(**kwargs)
-    aec_env = parallel_to_aec_wrapper(aec_env)
-    return aec_env
+    return make_aec_env(parallel_env(**kwargs))

@@ -8,12 +8,12 @@ SimpleTagEnv::SimpleTagEnv(int num_good, int num_adversaries, int num_obstacles,
                            bool terminate_on_success,
                            std::optional<int> num_agent_neighbors,
                            std::optional<int> num_landmark_neighbors)
-    : world_(),
+    : BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
+              continuous_actions),
+      world_(),
       scenario_(num_good, num_adversaries, num_obstacles, curriculum,
                 terminate_on_success, num_agent_neighbors,
-                num_landmark_neighbors),
-      BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
-              continuous_actions) {
+                num_landmark_neighbors) {
   scenario_.make_world(world_);
   world_.cache_entities();
 

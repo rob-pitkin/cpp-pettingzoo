@@ -16,6 +16,7 @@ build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
 import _simple_spread
+from cpp_mpe2._wrappers import check_and_maybe_clip_actions, make_aec_env
 from cpp_mpe2.core import Agent, Landmark, World
 
 class raw_env(ParallelEnv, EzPickle):
@@ -38,6 +39,7 @@ class raw_env(ParallelEnv, EzPickle):
         continuous_actions: bool = False,
         render_mode: Optional[str] = None,
         dynamic_rescaling: bool = False,
+         benchmark_data=False,
         local_ratio: float = 0.5,
         curriculum: bool = False,
         curriculum_stage: int = 0
@@ -59,6 +61,7 @@ class raw_env(ParallelEnv, EzPickle):
             continuous_actions=continuous_actions,
             render_mode=render_mode,
             dynamic_rescaling=dynamic_rescaling,
+             benchmark_data=benchmark_data,
             local_ratio=local_ratio,
             curriculum=curriculum,
             curriculum_stage=curriculum_stage
@@ -181,6 +184,7 @@ class raw_env(ParallelEnv, EzPickle):
             truncations: Dict of truncation flags
             infos: Dict of info dicts
         """
+        actions = check_and_maybe_clip_actions(actions, self.action_space, self.continuous_actions)
         if not actions:
             self.agents = []
             return {}, {}, {}, {}, {}
@@ -302,15 +306,4 @@ parallel_env = raw_env
 
 # Provide AEC wrapper for compatibility with MPE2
 def env(**kwargs):
-    from pettingzoo.utils.conversions import parallel_to_aec_wrapper
-    from pettingzoo.utils import wrappers
-
-    parallel = parallel_env(**kwargs)
-    aec = parallel_to_aec_wrapper(parallel)
-    # Add the same wrappers MPE2 uses
-    if parallel.continuous_actions:
-        aec = wrappers.ClipOutOfBoundsWrapper(aec)
-    else:
-        aec = wrappers.AssertOutOfBoundsWrapper(aec)
-    aec = wrappers.OrderEnforcingWrapper(aec)
-    return aec
+    return make_aec_env(parallel_env(**kwargs))

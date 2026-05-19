@@ -8,12 +8,12 @@ import numpy as np
 import pygame
 from gymnasium.utils import EzPickle
 from pettingzoo import ParallelEnv
-from pettingzoo.utils.conversions import parallel_to_aec_wrapper
 
 build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
 import _simple_tag
+from cpp_mpe2._wrappers import check_and_maybe_clip_actions, make_aec_env
 from cpp_mpe2.core import Agent, Landmark, World
 
 
@@ -56,6 +56,7 @@ class parallel_env(ParallelEnv, EzPickle):
         continuous_actions=False,
         render_mode=None,
         dynamic_rescaling=False,
+        benchmark_data=False,
         curriculum=False,
         terminate_on_success=False,
         num_agent_neighbors=None,
@@ -70,6 +71,7 @@ class parallel_env(ParallelEnv, EzPickle):
             continuous_actions=continuous_actions,
             render_mode=render_mode,
             dynamic_rescaling=dynamic_rescaling,
+            benchmark_data=benchmark_data,
             curriculum=curriculum,
             terminate_on_success=terminate_on_success,
             num_agent_neighbors=num_agent_neighbors,
@@ -187,6 +189,7 @@ class parallel_env(ParallelEnv, EzPickle):
         return observations, infos
 
     def step(self, actions):
+        actions = check_and_maybe_clip_actions(actions, self.action_space, self.continuous_actions)
         if not self.continuous_actions:
             actions = {
                 agent: np.array([action], dtype=np.float32)
@@ -287,6 +290,4 @@ class parallel_env(ParallelEnv, EzPickle):
 
 
 def env(**kwargs):
-    aec_env = parallel_env(**kwargs)
-    aec_env = parallel_to_aec_wrapper(aec_env)
-    return aec_env
+    return make_aec_env(parallel_env(**kwargs))

@@ -4,10 +4,10 @@ namespace cpp_mpe2::simple_push {
 
 SimplePushEnv::SimplePushEnv(int max_cycles, bool continuous_actions,
                              bool dynamic_rescaling)
-    : world_(),
-      scenario_(),
-      BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
-              continuous_actions) {
+    : BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
+              continuous_actions),
+      world_(),
+      scenario_() {
   scenario_.make_world(world_);
   world_.cache_entities();
 

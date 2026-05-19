@@ -14,6 +14,7 @@ build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
 import _simple_crypto
+from cpp_mpe2._wrappers import check_and_maybe_clip_actions, make_aec_env
 from cpp_mpe2.core import Agent, Landmark, World
 
 
@@ -49,6 +50,7 @@ class parallel_env(ParallelEnv, EzPickle):
         continuous_actions=False,
         render_mode=None,
         dynamic_rescaling=False,
+         benchmark_data=False,
     ):
         EzPickle.__init__(
             self,
@@ -56,6 +58,7 @@ class parallel_env(ParallelEnv, EzPickle):
             continuous_actions=continuous_actions,
             render_mode=render_mode,
             dynamic_rescaling=dynamic_rescaling,
+             benchmark_data=benchmark_data,
         )
 
         self.max_cycles = max_cycles
@@ -134,6 +137,7 @@ class parallel_env(ParallelEnv, EzPickle):
         return observations, infos
 
     def step(self, actions):
+        actions = check_and_maybe_clip_actions(actions, self.action_space, self.continuous_actions)
         if not self.continuous_actions:
             actions = {agent: np.array([action], dtype=np.float32)
                        for agent, action in actions.items()}
@@ -226,6 +230,4 @@ raw_env = parallel_env
 
 
 def env(**kwargs):
-    aec_env = parallel_env(**kwargs)
-    aec_env = parallel_to_aec_wrapper(aec_env)
-    return aec_env
+    return make_aec_env(parallel_env(**kwargs))

@@ -7,11 +7,11 @@ SimpleWorldCommEnv::SimpleWorldCommEnv(int num_good, int num_adversaries,
                                        int num_forests, int max_cycles,
                                        bool continuous_actions,
                                        bool dynamic_rescaling)
-    : world_(),
+    : BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
+              continuous_actions),
+      world_(),
       scenario_(num_good, num_adversaries, num_obstacles, num_food,
-                num_forests),
-      BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
-              continuous_actions) {
+                num_forests) {
   scenario_.make_world(world_);
   world_.cache_entities();
 

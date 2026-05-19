@@ -15,6 +15,7 @@ build_dir = Path(__file__).parent.parent.parent / "build"
 sys.path.insert(0, str(build_dir))
 
 import _simple_adversary
+from cpp_mpe2._wrappers import check_and_maybe_clip_actions, make_aec_env
 from cpp_mpe2.core import Agent, Landmark, World
 
 
@@ -40,6 +41,7 @@ class parallel_env(ParallelEnv, EzPickle):
         continuous_actions=False,
         render_mode=None,
         dynamic_rescaling=False,
+         benchmark_data=False,
     ):
         EzPickle.__init__(
             self,
@@ -48,6 +50,7 @@ class parallel_env(ParallelEnv, EzPickle):
             continuous_actions=continuous_actions,
             render_mode=render_mode,
             dynamic_rescaling=dynamic_rescaling,
+             benchmark_data=benchmark_data,
         )
 
         self.N = N
@@ -164,6 +167,7 @@ class parallel_env(ParallelEnv, EzPickle):
 
     def step(self, actions):
         """Execute one step."""
+        actions = check_and_maybe_clip_actions(actions, self.action_space, self.continuous_actions)
         # Convert discrete actions to vectors
         if not self.continuous_actions:
             actions = {
@@ -291,7 +295,4 @@ class parallel_env(ParallelEnv, EzPickle):
 
 # AEC wrapper
 def env(**kwargs):
-    """Create AEC environment."""
-    env = parallel_env(**kwargs)
-    env = parallel_to_aec_wrapper(env)
-    return env
+    return make_aec_env(parallel_env(**kwargs))

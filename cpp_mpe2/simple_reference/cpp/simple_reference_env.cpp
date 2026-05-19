@@ -5,10 +5,10 @@ namespace cpp_mpe2::simple_reference {
 SimpleReferenceEnv::SimpleReferenceEnv(int max_cycles, bool dynamic_rescaling,
                                        bool continuous_actions,
                                        float local_ratio)
-    : world_(),
-      scenario_(),
-      BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
-              continuous_actions, local_ratio) {
+    : BaseEnv(scenario_, world_, max_cycles, dynamic_rescaling,
+              continuous_actions, local_ratio),
+      world_(),
+      scenario_() {
   // Create world structure
   scenario_.make_world(world_);
   world_.cache_entities();

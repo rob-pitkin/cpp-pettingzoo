@@ -11,3 +11,6 @@ dependencies = [
     "mpe2==1.1.0",
     "pytest>=7.0.0",
 ]
+
+[tool.setuptools]
+packages = ["cpp_mpe2"]
